@@ -1,0 +1,329 @@
+{% extends 'base.html.twig' %}
+{% block title %}Nouvel événement — {{ child.firstName }} — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+@media (max-width: 500px) {
+    .dates-grid { grid-template-columns: 1fr !important; }
+    .type-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:620px;">
+
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
+        <a href="{{ path('app_event_index', {'childId': child.id}) }}" class="btn btn-ghost btn-sm">← Retour</a>
+        <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;">
+            {% if event.id %}Modifier l'événement{% else %}Nouvel <em style="font-style:italic;color:var(--terracotta)">événement</em>{% endif %}
+            <span style="color:var(--muted);font-size:1rem;"> — {{ child.firstName }}</span>
+        </h1>
+    </div>
+
+    <div class="card">
+        {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'event-form', 'enctype': 'multipart/form-data'}}) }}
+
+            {# ERREURS GLOBALES #}
+            {% if not form.vars.valid and form.vars.submitted %}
+            <div style="background:rgba(196,113,74,.1);border:1px solid var(--terracotta);border-radius:12px;padding:1rem;margin-bottom:1rem;">
+                <div style="font-weight:600;color:var(--terracotta);margin-bottom:.5rem;">Erreurs dans le formulaire :</div>
+                {{ form_errors(form) }}
+                {% for child in form %}
+                    {% if not child.vars.valid %}
+                    <div style="font-size:.85rem;color:var(--terracotta);">
+                        <strong>{{ child.vars.label }}</strong> : {{ form_errors(child) }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# TYPE #}
+            <div class="form-group">
+                <label class="form-label">Type d'événement</label>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;" class="type-grid">
+                    {% for choice in form.type %}
+                    <label style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;
+                                  padding:0.65rem 0.3rem;border-radius:14px;
+                                  border:2px solid var(--sand);background:var(--white);
+                                  cursor:pointer;font-size:0.7rem;font-weight:500;color:var(--muted);
+                                  transition:all .15s;" class="type-label">
+                        {{ form_widget(choice) }}
+                        <span style="font-size:1.2rem;">
+                            {% if choice.vars.value == 'garde' %}🏠
+                            {% elseif choice.vars.value == 'activite' %}🏃
+                            {% elseif choice.vars.value == 'medical' %}🏥
+                            {% elseif choice.vars.value == 'vacances' %}🌴
+                            {% else %}📌{% endif %}
+                        </span>
+                        {{ choice.vars.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# TITRE #}
+            <div class="form-group">
+                {{ form_label(form.title, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.title, {'attr': {'class': 'form-control', 'autofocus': true}}) }}
+                {{ form_errors(form.title) }}
+            </div>
+
+            {# DATES #}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;" class="dates-grid">
+                <div class="form-group">
+                    {{ form_label(form.startAt, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.startAt, {'attr': {'class': 'form-control', 'id': 'field-startAt'}}) }}
+                    {{ form_errors(form.startAt) }}
+                </div>
+                <div class="form-group" id="end-group">
+                    {{ form_label(form.endAt, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.endAt, {'attr': {'class': 'form-control', 'id': 'field-endAt'}}) }}
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.2rem;">
+                {{ form_widget(form.allDay, {'attr': {'style': 'accent-color:var(--forest)', 'id': 'field-allDay'}}) }}
+                {{ form_label(form.allDay, null, {'label_attr': {'style': 'font-size:.85rem;color:var(--muted);cursor:pointer;'}}) }}
+            </div>
+
+            {# DESCRIPTION #}
+            <div class="form-group">
+                {{ form_label(form.description, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.description, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            {# RÉCURRENCE #}
+            <div class="form-group">
+                {{ form_label(form.recurrence, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.recurrence, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            {# RESPONSABLE #}
+            <div class="form-group">
+                <label class="form-label">Gardien responsable</label>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    {% for choice in form.responsibleGuardian %}
+                    <label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.9rem;
+                                  border-radius:100px;border:1.5px solid var(--sand);background:var(--white);
+                                  cursor:pointer;font-size:0.82rem;transition:all .15s;" class="resp-label">
+                        {{ form_widget(choice) }}
+                        {{ choice.vars.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# VISIBILITÉ #}
+            <div class="form-group">
+                <label class="form-label">Visible par</label>
+                <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                    {% for choice in form.visibleTo %}
+                    <label style="display:flex;align-items:center;justify-content:space-between;
+                                  padding:0.65rem 0.9rem;border-radius:12px;
+                                  border:1.5px solid var(--sand);background:var(--white);cursor:pointer;
+                                  transition:all .15s;" class="vis-label">
+                        <span style="font-size:0.85rem;">{{ choice.vars.label }}</span>
+                        {{ form_widget(choice, {'attr': {'style': 'accent-color:var(--forest);width:20px;height:20px;'}}) }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem;">Laisser vide = visible par tous les gardiens</div>
+            </div>
+
+            {# ── IMAGE ── #}
+            <div class="form-group">
+                <label class="form-label">🖼️ Image (affichée dans le train)</label>
+
+                {# Bibliothèque d'images existantes #}
+                {% if existingImages is defined and existingImages|length > 0 %}
+                <div style="margin-bottom:.8rem;">
+                    <div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;">Choisir une image existante :</div>
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;" id="image-library">
+                        {# Option "aucune image" #}
+                        <div class="img-choice selected" data-id=""
+                             onclick="selectImage(this, '')"
+                             style="width:64px;height:64px;border-radius:10px;border:2px solid var(--forest);
+                                    background:var(--warm);display:flex;align-items:center;justify-content:center;
+                                    cursor:pointer;font-size:1.3rem;flex-shrink:0;">
+                            ✕
+                        </div>
+                        {% for img in existingImages %}
+                        <div class="img-choice {% if event.image and event.image.id == img.id %}selected{% endif %}"
+                             data-id="{{ img.id }}"
+                             onclick="selectImage(this, '{{ img.id }}')"
+                             title="{{ img.label }}"
+                             style="width:64px;height:64px;border-radius:10px;
+                                    border:2px solid {% if event.image and event.image.id == img.id %}var(--forest){% else %}var(--sand){% endif %};
+                                    overflow:hidden;cursor:pointer;flex-shrink:0;position:relative;">
+                            <img src="{{ img.getPublicThumbnailPath() }}" alt="{{ img.label }}"
+                                 style="width:100%;height:100%;object-fit:cover;"
+                                 onerror="this.parentElement.innerHTML='📷'">
+                            {% if img.label %}
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);
+                                        color:white;font-size:.45rem;text-align:center;padding:1px;
+                                        overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">
+                                {{ img.label|slice(0,10) }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Upload nouvelle image #}
+                <div style="border:1.5px dashed var(--sand);border-radius:12px;padding:1rem;background:var(--warm);"
+                     id="upload-zone">
+                    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">
+                        Ou uploader une nouvelle image :
+                    </div>
+                    <input type="file" name="event_image_file" id="event_image_file"
+                           accept="image/jpeg,image/png,image/webp,image/gif"
+                           style="display:none"
+                           onchange="previewUpload(this)">
+                    <div style="display:flex;align-items:center;gap:.8rem;">
+                        <button type="button" onclick="document.getElementById('event_image_file').click()"
+                                class="btn btn-ghost btn-sm">
+                            📁 Choisir un fichier
+                        </button>
+                        <div id="upload-preview" style="display:none;align-items:center;gap:.5rem;">
+                            <img id="preview-img" src="" alt="preview"
+                                 style="width:50px;height:50px;border-radius:8px;object-fit:cover;border:1.5px solid var(--sand);">
+                            <span id="preview-name" style="font-size:.78rem;color:var(--muted);"></span>
+                            <button type="button" onclick="clearUpload()"
+                                    style="background:none;border:none;color:var(--terracotta);cursor:pointer;font-size:.9rem;">✕</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:.6rem;">
+                        <input type="text" name="image_label" placeholder="Nom pour la bibliothèque (ex: Piscine, Danse…)"
+                               class="form-control" style="font-size:.82rem;">
+                    </div>
+                </div>
+
+                <input type="hidden" name="selected_image_id" id="selected_image_id"
+                       value="{{ event.image ? event.image.id : '' }}">
+            </div>
+
+            <div style="display:flex;gap:0.8rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--sand);">
+                <a href="{{ path('app_event_index', {'childId': child.id}) }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if event.id %}Enregistrer{% else %}Créer l'événement{% endif %}
+                </button>
+            </div>
+
+        {{ form_end(form, {'render_rest': false}) }}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+// Style des radios custom
+document.querySelectorAll('.type-label input').forEach(input => {
+    input.style.display = 'none';
+    if (input.checked) input.closest('.type-label').style.borderColor = 'var(--forest)';
+    input.addEventListener('change', () => {
+        document.querySelectorAll('.type-label').forEach(l => l.style.borderColor = 'var(--sand)');
+        if (input.checked) input.closest('.type-label').style.borderColor = 'var(--forest)';
+    });
+});
+document.querySelectorAll('.resp-label input').forEach(input => {
+    input.style.display = 'none';
+    if (input.checked) input.closest('.resp-label').style.borderColor = 'var(--forest)';
+    input.addEventListener('change', () => {
+        document.querySelectorAll('.resp-label').forEach(l => l.style.borderColor = 'var(--sand)');
+        if (input.checked) input.closest('.resp-label').style.borderColor = 'var(--forest)';
+    });
+});
+document.querySelectorAll('.vis-label input').forEach(input => {
+    const update = () => {
+        input.closest('.vis-label').style.borderColor = input.checked ? 'var(--forest)' : 'var(--sand)';
+        input.closest('.vis-label').style.background  = input.checked ? 'rgba(61,90,71,0.05)' : 'var(--white)';
+    };
+    update();
+    input.addEventListener('change', update);
+});
+// ── Dates ──
+const startAt = document.getElementById('field-startAt');
+const endAt   = document.getElementById('field-endAt');
+const allDay  = document.getElementById('field-allDay');
+
+// Quand startAt change → mettre endAt = startAt + 1h (si pas allDay)
+startAt?.addEventListener('change', function() {
+    if (!endAt || !this.value) return;
+    if (allDay?.checked) {
+        // Toute la journée : fin = même date
+        endAt.value = this.value.split('T')[0] + 'T23:59';
+    } else {
+        // Ajouter 1h
+        const d = new Date(this.value);
+        d.setHours(d.getHours() + 1);
+        endAt.value = d.toISOString().slice(0, 16);
+    }
+});
+
+// Quand allDay change
+allDay?.addEventListener('change', function() {
+    const endGroup = document.getElementById('end-group');
+    if (this.checked) {
+        // Cacher la fin, mettre fin = début même jour 23:59
+        if (endGroup) endGroup.style.display = 'none';
+        if (startAt?.value && endAt) {
+            endAt.value = startAt.value.split('T')[0] + 'T23:59';
+        }
+    } else {
+        if (endGroup) endGroup.style.display = '';
+        // Remettre fin = début + 1h
+        if (startAt?.value && endAt) {
+            const d = new Date(startAt.value);
+            d.setHours(d.getHours() + 1);
+            endAt.value = d.toISOString().slice(0, 16);
+        }
+    }
+});
+
+// État initial
+if (allDay?.checked) {
+    const endGroup = document.getElementById('end-group');
+    if (endGroup) endGroup.style.display = 'none';
+}
+
+// ── Sélection image bibliothèque ──
+function selectImage(el, id) {
+    document.querySelectorAll('.img-choice').forEach(c => {
+        c.style.borderColor = 'var(--sand)';
+        c.classList.remove('selected');
+    });
+    el.style.borderColor = 'var(--forest)';
+    el.classList.add('selected');
+    document.getElementById('selected_image_id').value = id;
+    if (id) clearUpload();
+}
+
+// ── Preview upload ──
+function previewUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file   = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('preview-img').src = e.target.result;
+        document.getElementById('preview-name').textContent = file.name;
+        document.getElementById('upload-preview').style.display = 'flex';
+        document.querySelectorAll('.img-choice').forEach(c => {
+            c.style.borderColor = 'var(--sand)';
+            c.classList.remove('selected');
+        });
+        document.getElementById('selected_image_id').value = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearUpload() {
+    document.getElementById('event_image_file').value = '';
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('preview-img').src = '';
+}
+</script>
+{% endblock %}

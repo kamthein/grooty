@@ -1,0 +1,37 @@
+security:
+    password_hashers:
+        App\Entity\Guardian:
+            algorithm: auto
+
+    providers:
+        guardian_provider:
+            entity:
+                class: App\Entity\Guardian
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: guardian_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                default_target_path: app_dashboard
+                username_parameter: _username
+                password_parameter: _password
+                enable_csrf: true
+            logout:
+                path: app_logout
+                target: app_login
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 604800
+
+    access_control:
+        - { path: ^/login,    roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/share/,   roles: PUBLIC_ACCESS }
+        - { path: ^/,         roles: ROLE_USER }

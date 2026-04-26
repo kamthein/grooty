@@ -1,0 +1,422 @@
+{% extends 'base.html.twig' %}
+{% block title %}Accueil — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+.events-col { display: flex; flex-direction: column; gap: 1.2rem; }
+.notes-col  { display: flex; flex-direction: column; height: 560px; }
+
+/* Pills enfants */
+.child-pills {
+    display: flex;
+    gap: .8rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 700px) {
+    /* Une seule colonne */
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+    /* Notes en premier sur mobile */
+    .notes-col  { order: -1; height: 340px; }
+    .events-col { order: 0; }
+
+    /* Pills en scroll horizontal */
+    .child-pills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: .2rem;
+        margin-right: -1rem;
+        padding-right: 1rem;
+    }
+
+    /* Header */
+    .dash-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: .5rem;
+    }
+    .dash-header h1 { font-size: 1.4rem !important; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main">
+
+    {# HEADER #}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;" class="dash-header">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
+            Bonjour <em style="font-style:italic;color:var(--terracotta)">{{ app.user.firstName }}</em> 👋
+        </h1>
+        {% if children is not empty %}
+        <div style="display:flex;gap:.5rem;">
+            <a href="{{ path('app_event_new', {'childId': children|first.id}) }}" class="btn btn-secondary">＋ Événement</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if children is empty %}
+        <div class="card" style="text-align:center;padding:3rem;">
+            <div style="font-size:3rem;margin-bottom:1rem;">👶</div>
+            <h2 style="font-family:'Fraunces',serif;font-weight:300;margin-bottom:.5rem;">Commencez par ajouter un enfant</h2>
+            <p style="color:var(--muted);margin-bottom:1.5rem;">Créez le profil de votre enfant pour démarrer le calendrier partagé.</p>
+            <a href="{{ path('app_child_new') }}" class="btn btn-primary">＋ Ajouter un enfant</a>
+        </div>
+    {% else %}
+
+    {# ENFANTS — pills cliquables #}
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1.5rem;" class="child-pills">
+        {% for cg in childGuardians %}
+        <a href="{{ path('app_event_index', {'childId': cg.child.id}) }}"
+           style="display:flex;align-items:center;gap:.7rem;padding:.6rem 1.1rem;
+                  background:var(--white);border:1.5px solid var(--sand);border-radius:14px;
+                  text-decoration:none;color:var(--ink);transition:all .15s;"
+           onmouseover="this.style.borderColor='var(--forest)'" onmouseout="this.style.borderColor='var(--sand)'">
+            {% if cg.child.avatarPath %}
+            <img src="/uploads/events/{{ cg.child.avatarPath }}"
+                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--sand);"
+                 onerror="this.style.display='none'">
+            {% else %}
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--forest);
+                        display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.8rem;">
+                {{ cg.child.firstName|first|upper }}
+            </div>
+            {% endif %}
+            <div>
+                <div style="font-weight:600;font-size:.9rem;">{{ cg.child.firstName }}</div>
+                <div style="font-size:.7rem;color:var(--muted);">{{ cg.role }}</div>
+            </div>
+        </a>
+        {% endfor %}
+        <a href="{{ path('app_child_new') }}"
+           style="display:flex;align-items:center;gap:.5rem;padding:.6rem 1.1rem;
+                  background:var(--warm);border:1.5px dashed var(--sand);border-radius:14px;
+                  text-decoration:none;color:var(--muted);font-size:.85rem;">
+            ＋ Enfant
+        </a>
+    </div>
+
+    {# LAYOUT principal : événements à gauche, notes à droite #}
+    <div class="dashboard-grid">
+
+        {# ── COLONNE GAUCHE : événements ── #}
+        <div class="events-col">
+
+            {# Aujourd'hui #}
+            <div class="card">
+                <h2 class="card-title">📅 Aujourd'hui</h2>
+                {% set todayEvents = todayGuardians %}
+                {% if todayEvents is empty %}
+                    <p style="color:var(--muted);font-size:.88rem;">Aucun événement aujourd'hui.</p>
+                {% else %}
+                    {% for event in todayEvents %}
+                    <div style="display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-bottom:1px solid var(--warm);">
+                        <span style="font-size:1rem;flex-shrink:0;">
+                            {% if event.type == 'garde' %}🏠{% elseif event.type == 'activite' %}🏃{% elseif event.type == 'medical' %}🏥{% elseif event.type == 'vacances' %}🌴{% else %}📌{% endif %}
+                        </span>
+                        <div>
+                            <div style="font-size:.88rem;font-weight:500;">{{ event.title }}</div>
+                            <div style="font-size:.75rem;color:var(--muted);">
+                                {{ event.child.firstName }}{% if event.responsibleGuardian %} · {{ event.responsibleGuardian.firstName }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            {# À venir #}
+            <div class="card">
+                <h2 class="card-title">🔔 À venir</h2>
+                {% if upcomingEvents is empty %}
+                    <p style="color:var(--muted);font-size:.88rem;">Aucun événement cette semaine.</p>
+                {% else %}
+                    {% for event in upcomingEvents|slice(0,6) %}
+                    <div onclick="openEventModal(
+                                {{ event.id }},
+                                '{{ event.title|e('html_attr') }}',
+                                '{{ event.type }}',
+                                '{{ event.startAt|date('d/m/Y') }}',
+                                {% if event.endAt %}'{{ event.endAt|date('d/m/Y') }}'{% else %}null{% endif %},
+                                {{ event.child.id }},
+                                '{{ event.description ? event.description|e('html_attr')|nl2br : '' }}',
+                                {% if event.image %}'{{ '/uploads/events/' ~ event.image.filePath }}'{% else %}null{% endif %}
+                             )"
+                         style="display:flex;align-items:center;gap:.7rem;padding:.5rem 0;
+                                border-bottom:1px solid var(--warm);cursor:pointer;">
+                        <div style="font-size:.7rem;color:var(--muted);min-width:42px;flex-shrink:0;">
+                            {{ event.startAt|date('d/m') }}
+                        </div>
+                        {% if event.image %}
+                        <img src="/uploads/events/thumbs/thumb_{{ event.image.filePath }}"
+                             style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;"
+                             onerror="this.style.display='none'">
+                        {% else %}
+                        <span style="font-size:.9rem;flex-shrink:0;">
+                            {% if event.type == 'garde' %}🏠{% elseif event.type == 'activite' %}🏃{% elseif event.type == 'medical' %}🏥{% elseif event.type == 'vacances' %}🌴{% else %}📌{% endif %}
+                        </span>
+                        {% endif %}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:.88rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ event.title }}</div>
+                            <div style="font-size:.72rem;color:var(--muted);">{{ event.child.firstName }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── COLONNE DROITE : fil de notes interactif ── #}
+        <div class="card notes-col">
+
+            {# Sélecteur enfant pour les notes #}
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;flex-shrink:0;">
+                {% for cg in childGuardians %}
+                <button onclick="switchChild({{ cg.child.id }}, '{{ cg.child.firstName }}')"
+                        id="child-btn-{{ cg.child.id }}"
+                        style="padding:.3rem .8rem;border-radius:100px;font-size:.78rem;font-weight:500;cursor:pointer;
+                               border:1.5px solid var(--sand);background:{% if loop.first %}var(--forest){% else %}var(--white){% endif %};
+                               color:{% if loop.first %}white{% else %}var(--muted){% endif %};">
+                    {{ cg.child.firstName }}
+                </button>
+                {% endfor %}
+            </div>
+
+            {# Fil des notes #}
+            <div id="note-thread"
+                 style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.7rem;padding-bottom:.5rem;">
+                <div id="thread-loading" style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem 0;">
+                    Chargement…
+                </div>
+            </div>
+
+            {# Zone saisie #}
+            <div style="flex-shrink:0;border-top:1px solid var(--sand);padding-top:.8rem;margin-top:.5rem;">
+                <div style="display:flex;gap:.5rem;align-items:flex-end;">
+                    <textarea id="note-input" placeholder="Écrire une note…" rows="1"
+                              style="flex:1;background:var(--warm);border:1.5px solid transparent;border-radius:12px;
+                                     padding:.6rem .9rem;font-family:'DM Sans',sans-serif;font-size:.88rem;
+                                     outline:none;resize:none;min-height:40px;max-height:100px;line-height:1.4;"
+                              onfocus="this.style.borderColor='var(--forest)'"
+                              onblur="this.style.borderColor='transparent'"
+                              oninput="autoResize(this)"
+                              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendNote();}"></textarea>
+                    <button onclick="sendNote()"
+                            style="width:42px;height:42px;border-radius:50%;border:none;background:var(--forest);
+                                   color:white;cursor:pointer;font-size:.95rem;flex-shrink:0;
+                                   box-shadow:0 3px 10px rgba(61,90,71,.3);">➤</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+</div>
+
+{# Lightbox #}
+<div id="lightbox" onclick="closeLightbox()"
+     style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.88);
+            align-items:center;justify-content:center;">
+    <img id="lightbox-img" src="" style="max-width:92vw;max-height:90vh;border-radius:8px;">
+</div>
+
+{# Modal événement #}
+<div id="ev-modal" onclick="if(event.target===this)closeEventModal()"
+     style="display:none;position:fixed;inset:0;z-index:200;background:rgba(28,28,26,.4);
+            backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+    <div onclick="event.stopPropagation()"
+         style="background:var(--cream);border-radius:20px;width:100%;max-width:420px;
+                box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;">
+        <div id="ev-modal-content" style="padding:1.5rem 1.5rem 1rem;"></div>
+        <div style="padding:.5rem 1.5rem 1.5rem;display:flex;gap:.5rem;justify-content:flex-end;">
+            <button onclick="closeEventModal()" class="btn btn-ghost btn-sm">Fermer</button>
+            <button onclick="deleteCurrentEvent()" class="btn btn-ghost btn-sm" style="color:var(--terracotta);border-color:var(--terracotta);">🗑️ Supprimer</button>
+            <a id="modal-edit-btn" href="#" class="btn btn-primary btn-sm">✏️ Modifier</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const myId = {{ app.user.id }};
+let currentChildId = {{ children is not empty ? children|first.id : 0 }};
+
+// Charger les notes au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+    if (currentChildId) loadNotes(currentChildId);
+});
+
+function switchChild(childId, name) {
+    currentChildId = childId;
+    // Mettre à jour les boutons
+    document.querySelectorAll('[id^="child-btn-"]').forEach(btn => {
+        btn.style.background = 'var(--white)';
+        btn.style.color = 'var(--muted)';
+        btn.style.borderColor = 'var(--sand)';
+    });
+    const activeBtn = document.getElementById('child-btn-' + childId);
+    if (activeBtn) {
+        activeBtn.style.background = 'var(--forest)';
+        activeBtn.style.color = 'white';
+        activeBtn.style.borderColor = 'var(--forest)';
+    }
+    loadNotes(childId);
+}
+
+function loadNotes(childId) {
+    const thread = document.getElementById('note-thread');
+    thread.innerHTML = '<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem 0;">Chargement…</div>';
+
+    fetch(`/children/${childId}/notes/list`)
+        .then(r => r.json())
+        .then(notes => renderThread(notes))
+        .catch(() => {
+            thread.innerHTML = '<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem 0;">Aucune note.</div>';
+        });
+}
+
+function renderThread(notes) {
+    const thread = document.getElementById('note-thread');
+    thread.innerHTML = '';
+
+    if (!notes.length) {
+        thread.innerHTML = '<div data-empty style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem 0;">Aucune note pour l\'instant.<br>Écris la première !</div>';
+        return;
+    }
+
+    notes.forEach(n => thread.appendChild(buildBubble(n)));
+    thread.scrollTop = thread.scrollHeight;
+}
+
+function buildBubble(n) {
+    const isMe = n.authorId === myId;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `display:flex;gap:.6rem;align-items:flex-end;${isMe ? 'flex-direction:row-reverse;' : ''}`;
+
+    let photosHtml = '';
+    if (n.attachments && n.attachments.length) {
+        const cols = n.attachments.length > 1 ? '1fr 1fr' : '1fr';
+        photosHtml = `<div style="display:grid;grid-template-columns:${cols};gap:.3rem;max-width:200px;margin-bottom:${n.content ? '.4rem' : '0'};">`;
+        n.attachments.forEach(a => {
+            photosHtml += `<div style="aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:zoom-in;"
+                onclick="openLightbox('${a.path}')">
+                <img src="${a.thumbnail}" style="width:100%;height:100%;object-fit:cover;"
+                     onerror="this.parentElement.innerHTML='📷'">
+            </div>`;
+        });
+        photosHtml += '</div>';
+    }
+
+    wrap.innerHTML = `
+        <div style="width:28px;height:28px;border-radius:50%;
+                    background:${isMe ? 'var(--forest)' : 'var(--terracotta)'};
+                    display:flex;align-items:center;justify-content:center;
+                    color:white;font-size:.6rem;font-weight:700;flex-shrink:0;">
+            ${n.author.charAt(0)}
+        </div>
+        <div style="max-width:72%;display:flex;flex-direction:column;gap:.2rem;${isMe ? 'align-items:flex-end;' : ''}">
+            <div style="font-size:.65rem;color:var(--muted);padding:0 .3rem;">${n.author}</div>
+            <div style="background:${isMe ? 'var(--forest)' : 'var(--white)'};
+                        color:${isMe ? 'white' : 'var(--ink-soft)'};
+                        border:${isMe ? 'none' : '1px solid var(--sand)'};
+                        border-radius:${isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};
+                        padding:.55rem .8rem;font-size:.85rem;line-height:1.4;">
+                ${photosHtml}
+                ${n.content || ''}
+            </div>
+            <div style="font-size:.62rem;color:var(--muted);padding:0 .3rem;">${n.createdAt}</div>
+        </div>`;
+    return wrap;
+}
+
+function sendNote() {
+    const input   = document.getElementById('note-input');
+    const sendBtn = document.querySelector('button[onclick="sendNote()"]');
+    const text    = input.value.trim();
+    if (!text) return;
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = '…';
+
+    const fd = new FormData();
+    fd.append('content', text);
+
+    fetch(`/children/${currentChildId}/notes/new`, { method:'POST', body:fd })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Erreur');
+            const thread = document.getElementById('note-thread');
+            const empty  = thread.querySelector('[data-empty]');
+            if (empty) thread.innerHTML = '';
+            thread.appendChild(buildBubble(data));
+            thread.scrollTop = thread.scrollHeight;
+            input.value = '';
+            input.style.height = '';
+        })
+        .catch(err => alert('Erreur : ' + err.message))
+        .finally(() => { sendBtn.disabled = false; sendBtn.textContent = '➤'; });
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+}
+
+// ── Modal événement ──
+const typeLabels = {garde:'🏠 Garde', activite:'🏃 Activité', medical:'🏥 Médical', vacances:'🌴 Vacances', autre:'📌 Autre'};
+let currentEvent = null;
+
+function openEventModal(id, title, type, start, end, childId, description, imageUrl) {
+    currentEvent = { id, childId };
+    const date = end && end !== start ? `Du ${start} au ${end}` : start;
+    document.getElementById('ev-modal-content').innerHTML = `
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem;">${typeLabels[type]||type}</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:400;margin-bottom:.5rem;">${title}</h2>
+        <div style="font-size:.88rem;color:var(--muted);margin-bottom:${(description||imageUrl)?'.8rem':'0'};">📅 ${date}</div>
+        ${description ? `<p style="font-size:.88rem;color:var(--ink-soft);line-height:1.5;margin-bottom:${imageUrl?'.8rem':'0'};">${description}</p>` : ''}
+        ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:200px;object-fit:contain;background:var(--warm);border-radius:12px;"></div>` : ''}
+    `;
+    document.getElementById('modal-edit-btn').href = `/children/${childId}/events/${id}/edit`;
+    document.getElementById('ev-modal').style.display = 'flex';
+}
+
+function closeEventModal() {
+    document.getElementById('ev-modal').style.display = 'none';
+    currentEvent = null;
+}
+
+function deleteCurrentEvent() {
+    if (!currentEvent) return;
+    if (!confirm('Supprimer cet événement ?')) return;
+    fetch(`/children/${currentEvent.childId}/events/${currentEvent.id}/delete`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(d => { if (d.success) window.location.reload(); })
+    .catch(() => alert('Erreur lors de la suppression'));
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
+</script>
+{% endblock %}

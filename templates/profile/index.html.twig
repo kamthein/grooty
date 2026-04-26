@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+{% block title %}Mon profil — Grooty{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:600px;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
+            Mon <em style="font-style:italic;color:var(--terracotta)">profil</em>
+        </h1>
+        <a href="{{ path('app_profile_edit') }}" class="btn btn-primary">✏️ Modifier</a>
+    </div>
+
+    <div class="card" style="margin-bottom:1.2rem;">
+        <div style="display:flex;align-items:center;gap:1.5rem;">
+            <div style="width:64px;height:64px;border-radius:50%;background:var(--forest);
+                        display:flex;align-items:center;justify-content:center;
+                        color:white;font-family:'Fraunces',serif;font-size:1.5rem;">
+                {{ guardian.firstName|first|upper }}
+            </div>
+            <div>
+                <div style="font-family:'Fraunces',serif;font-size:1.3rem;">{{ guardian.fullName }}</div>
+                <div style="font-size:.85rem;color:var(--muted);margin-top:.2rem;">{{ guardian.email }}</div>
+                <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;">
+                    Membre depuis {{ guardian.createdAt|date('d/m/Y') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Suppression compte #}
+    <div class="card" style="border-color:rgba(196,113,74,.3);">
+        <h2 style="font-family:'Fraunces',serif;font-size:1rem;font-weight:400;color:var(--terracotta);margin-bottom:.5rem;">
+            ⚠️ Zone dangereuse
+        </h2>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">
+            La suppression de votre compte est irréversible. Toutes vos données personnelles seront effacées.
+        </p>
+        <button onclick="document.getElementById('delete-modal').style.display='flex'"
+                class="btn btn-ghost" style="color:var(--terracotta);border-color:var(--terracotta);">
+            🗑️ Supprimer mon compte
+        </button>
+    </div>
+</div>
+
+{# Modal confirmation suppression #}
+<div id="delete-modal"
+     style="display:none;position:fixed;inset:0;z-index:200;background:rgba(28,28,26,.5);
+            backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:var(--cream);border-radius:20px;width:100%;max-width:420px;padding:2rem;
+                box-shadow:0 20px 60px rgba(0,0,0,.2);">
+        <h2 style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;margin-bottom:.8rem;">
+            Supprimer votre compte ?
+        </h2>
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">
+            Cette action est <strong>irréversible</strong>. Votre compte et toutes vos données personnelles seront définitivement supprimés.
+            Les enfants et événements que vous avez créés seront également supprimés.
+        </p>
+        <div style="display:flex;gap:.8rem;justify-content:flex-end;">
+            <button onclick="document.getElementById('delete-modal').style.display='none'"
+                    class="btn btn-ghost">Annuler</button>
+            <form method="post" action="{{ path('app_profile_delete') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_profile') }}">
+                <button type="submit" class="btn btn-secondary">✓ Oui, supprimer mon compte</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

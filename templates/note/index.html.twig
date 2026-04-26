@@ -1,0 +1,115 @@
+{% extends 'base.html.twig' %}
+{% block title %}Notes — {{ child.firstName }} — Grooty{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:680px;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <a href="{{ path('app_train', {'childId': child.id}) }}" class="btn btn-ghost btn-sm">← Calendrier</a>
+            <h1 style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:300;">
+                Notes de <em style="font-style:italic;color:var(--terracotta)">{{ child.firstName }}</em>
+            </h1>
+        </div>
+    </div>
+
+    {# Zone d'ajout #}
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div style="display:flex;gap:.5rem;align-items:flex-end;">
+            <textarea id="note-input" placeholder="Écrire une note…" rows="2"
+                      style="flex:1;background:var(--warm);border:1.5px solid transparent;border-radius:14px;
+                             padding:.7rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;
+                             outline:none;resize:none;line-height:1.4;"
+                      onfocus="this.style.borderColor='var(--forest)'"
+                      onblur="this.style.borderColor='transparent'"
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendNote();}"></textarea>
+            <button onclick="sendNote()"
+                    style="width:44px;height:44px;border-radius:50%;border:none;background:var(--forest);
+                           color:white;cursor:pointer;font-size:1rem;
+                           box-shadow:0 3px 10px rgba(61,90,71,.3);">➤</button>
+        </div>
+    </div>
+
+    {# Notes existantes #}
+    {% if notes is empty %}
+    <div style="text-align:center;color:var(--muted);padding:2rem;font-size:.88rem;">
+        Aucune note pour {{ child.firstName }} pour l'instant.
+    </div>
+    {% else %}
+    <div id="note-list" style="display:flex;flex-direction:column;gap:.8rem;">
+        {% for note in notes %}
+        {% set isMe = note.author.id == app.user.id %}
+        <div style="display:flex;gap:.7rem;{% if isMe %}flex-direction:row-reverse;{% endif %}">
+            <div style="width:32px;height:32px;border-radius:50%;
+                        background:{% if isMe %}var(--forest){% else %}var(--terracotta){% endif %};
+                        display:flex;align-items:center;justify-content:center;
+                        color:white;font-size:.65rem;font-weight:700;flex-shrink:0;align-self:flex-end;">
+                {{ note.author.firstName|first|upper }}
+            </div>
+            <div style="max-width:75%;display:flex;flex-direction:column;gap:.25rem;{% if isMe %}align-items:flex-end;{% endif %}">
+                <div style="font-size:.68rem;color:var(--muted);padding:0 .4rem;">{{ note.author.fullName }}</div>
+                <div style="background:{% if isMe %}var(--forest){% else %}var(--white){% endif %};
+                            color:{% if isMe %}white{% else %}var(--ink-soft){% endif %};
+                            border:{% if isMe %}none{% else %}1px solid var(--sand){% endif %};
+                            border-radius:{% if isMe %}14px 14px 4px 14px{% else %}14px 14px 14px 4px{% endif %};
+                            padding:.6rem .9rem;font-size:.88rem;line-height:1.5;">
+                    {{ note.content }}
+                </div>
+                <div style="font-size:.65rem;color:var(--muted);padding:0 .4rem;">{{ note.createdAt|date('d/m/Y H:i') }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div id="new-notes"></div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const childId = {{ child.id }};
+
+function sendNote() {
+    const input   = document.getElementById('note-input');
+    const sendBtn = document.querySelector('button[onclick="sendNote()"]');
+    const text    = input.value.trim();
+    if (!text) return;
+
+    sendBtn.disabled    = true;
+    sendBtn.textContent = '…';
+
+    const fd = new FormData();
+    fd.append('content', text);
+
+    fetch(`/children/${childId}/notes/new`, { method:'POST', body:fd })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Erreur');
+            input.value = '';
+            const container = document.getElementById('new-notes');
+            const isMe = true;
+            const div  = document.createElement('div');
+            div.style.cssText = 'display:flex;gap:.7rem;flex-direction:row-reverse;margin-top:.8rem;';
+            div.innerHTML = `
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--forest);
+                            display:flex;align-items:center;justify-content:center;
+                            color:white;font-size:.65rem;font-weight:700;flex-shrink:0;align-self:flex-end;">
+                    ${data.author.charAt(0)}
+                </div>
+                <div style="max-width:75%;display:flex;flex-direction:column;gap:.25rem;align-items:flex-end;">
+                    <div style="font-size:.68rem;color:var(--muted);padding:0 .4rem;">${data.author}</div>
+                    <div style="background:var(--forest);color:white;
+                                border-radius:14px 14px 4px 14px;
+                                padding:.6rem .9rem;font-size:.88rem;line-height:1.5;">
+                        ${data.content}
+                    </div>
+                    <div style="font-size:.65rem;color:var(--muted);padding:0 .4rem;">${data.createdAt}</div>
+                </div>`;
+            container.appendChild(div);
+        })
+        .catch(err => alert('Erreur : ' + err.message))
+        .finally(() => { sendBtn.disabled = false; sendBtn.textContent = '➤'; });
+}
+</script>
+{% endblock %}

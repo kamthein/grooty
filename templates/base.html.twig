@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#3D5A47">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Grooty">
+    <title>{% block title %}Grooty{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+    {% block stylesheets %}{% endblock %}
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --cream: #FAF7F2; --warm: #F2EDE4; --sand: #E8DFD0;
+            --terracotta: #C4714A; --terracotta-light: #D98A63;
+            --forest: #3D5A47; --forest-light: #5A7D68;
+            --ink: #1C1C1A; --ink-soft: #3D3D38; --muted: #8A8578;
+            --white: #FFFFFF;
+            --nav-h: 60px;
+            --bottom-h: 64px;
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* ── NAVBAR DESKTOP ── */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--white); border-bottom: 1px solid var(--sand);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 1.5rem; height: var(--nav-h); gap: 1rem;
+        }
+        .navbar-brand {
+            font-family: 'Fraunces', serif; font-size: 1.3rem;
+            color: var(--forest); text-decoration: none; flex-shrink: 0;
+        }
+        .navbar-brand em { color: var(--terracotta); font-style: italic; }
+        .navbar-nav { display: flex; align-items: center; gap: 0.25rem; }
+        .nav-link {
+            padding: 0.4rem 0.85rem; border-radius: 100px; font-size: 0.82rem;
+            font-weight: 500; color: var(--muted); text-decoration: none;
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .nav-link:hover, .nav-link.active { background: var(--warm); color: var(--ink); }
+        .nav-user {
+            display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+        }
+        .nav-user a { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
+
+        /* ── BOTTOM NAV MOBILE ── */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            background: var(--white);
+            border-top: 1px solid var(--sand);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .bottom-nav-inner {
+            display: flex; align-items: center; justify-content: space-around;
+            height: var(--bottom-h);
+            padding: 0 .5rem;
+        }
+        .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            text-decoration: none; color: var(--muted); font-size: 0.62rem;
+            font-weight: 500; padding: 0.4rem 0.5rem; border-radius: 12px;
+            transition: all 0.15s; flex: 1; max-width: 80px;
+        }
+        .bottom-nav-item .bn-icon { font-size: 1.3rem; line-height: 1; }
+        .bottom-nav-item.active { color: var(--forest); }
+
+        /* ── FLASH ── */
+        .flash-container { max-width: 900px; margin: 0.8rem auto; padding: 0 1rem; }
+        .flash {
+            padding: 0.8rem 1.2rem; border-radius: 12px; font-size: 0.85rem;
+            margin-bottom: 0.4rem; line-height: 1.4;
+        }
+        .flash-success { background: rgba(61,90,71,0.1); color: var(--forest); border: 1px solid rgba(61,90,71,0.2); }
+        .flash-error   { background: rgba(196,113,74,0.1); color: var(--terracotta); border: 1px solid rgba(196,113,74,0.2); }
+        .flash-info    { background: rgba(138,133,120,0.1); color: var(--ink-soft); border: 1px solid var(--sand); }
+
+        /* ── MAIN ── */
+        .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.6rem 1.3rem; border-radius: 100px;
+            font-size: 0.88rem; font-weight: 500; cursor: pointer;
+            text-decoration: none; border: none; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary { background: var(--forest); color: white; }
+        .btn-primary:hover { background: var(--forest-light); }
+        .btn-secondary { background: var(--terracotta); color: white; }
+        .btn-secondary:hover { background: var(--terracotta-light); }
+        .btn-ghost { background: var(--white); color: var(--ink-soft); border: 1.5px solid var(--sand); }
+        .btn-ghost:hover { background: var(--warm); }
+        .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.78rem; }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--white); border-radius: 18px;
+            border: 1px solid var(--sand); padding: 1.5rem;
+        }
+        .card-title {
+            font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        /* ── FORM ── */
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        .form-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+        .form-control {
+            background: var(--white); border: 1.5px solid var(--sand);
+            border-radius: 12px; padding: 0.75rem 1rem;
+            font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink);
+            outline: none; width: 100%; transition: border-color 0.15s;
+            -webkit-appearance: none;
+        }
+        .form-control:focus { border-color: var(--forest); }
+        .form-error { font-size: 0.75rem; color: var(--terracotta); margin-top: 0.25rem; }
+
+        /* ── BADGE ── */
+        .badge {
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 100px;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em;
+        }
+
+        /* ── MOBILE ── */
+        @media (max-width: 640px) {
+            /* Navbar : garder logo + user, cacher nav centrale */
+            .navbar-nav { display: none; }
+            .navbar { padding: 0 1rem; }
+            .nav-user .btn { display: none; } /* cacher déconnexion — dans bottom nav */
+
+            /* Afficher bottom nav */
+            .bottom-nav { display: block; }
+
+            /* Compenser la bottom nav */
+            body { padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom)); }
+
+            /* Main padding réduit */
+            .main { padding: 1rem; }
+
+            /* Cards */
+            .card { padding: 1rem; border-radius: 14px; }
+
+            /* Flash */
+            .flash-container { padding: 0 0.8rem; }
+            .flash { font-size: 0.82rem; padding: 0.65rem 1rem; }
+
+            /* Boutons pleine largeur sur mobile si dans un form */
+            .btn-full-mobile { width: 100%; justify-content: center; }
+        }
+
+        @media (min-width: 641px) {
+            .bottom-nav { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+{% if app.user %}
+{# ── NAVBAR DESKTOP ── #}
+<nav class="navbar">
+    <a href="{{ path('app_dashboard') }}" class="navbar-brand">Gr<em>oo</em>ty</a>
+    <div class="navbar-nav">
+        <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
+        <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
+    </div>
+    <div class="nav-user">
+        <a href="{{ path('app_profile') }}">{{ app.user.firstName }}</a>
+        <a href="{{ path('app_logout') }}" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+</nav>
+
+{# ── BOTTOM NAV MOBILE ── #}
+<div class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a href="{{ path('app_dashboard') }}"
+           class="bottom-nav-item {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
+            <span class="bn-icon">🏠</span>
+            <span>Accueil</span>
+        </a>
+        <a href="{{ path('app_child_index') }}"
+           class="bottom-nav-item {% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">
+            <span class="bn-icon">👶</span>
+            <span>Enfants</span>
+        </a>
+        <a href="{{ path('app_profile') }}"
+           class="bottom-nav-item {% if 'profile' in app.request.attributes.get('_route','') %}active{% endif %}">
+            <span class="bn-icon">👤</span>
+            <span>{{ app.user.firstName|slice(0,6) }}</span>
+        </a>
+        <a href="{{ path('app_logout') }}" class="bottom-nav-item">
+            <span class="bn-icon">🚪</span>
+            <span>Quitter</span>
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<div class="flash-container">
+    {% for msg in app.flashes('success') %}<div class="flash flash-success">✓ {{ msg }}</div>{% endfor %}
+    {% for msg in app.flashes('error') %}  <div class="flash flash-error">✕ {{ msg }}</div>{% endfor %}
+    {% for msg in app.flashes('info') %}   <div class="flash flash-info">ℹ {{ msg }}</div>{% endfor %}
+</div>
+
+{% block body %}{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+{% block javascripts %}{% endblock %}
+
+{% if app.user %}
+<script>
+// ── SERVICE WORKER + PUSH ──
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+        // Vérifier si déjà abonné
+        reg.pushManager.getSubscription().then(sub => {
+            if (!sub) {
+                // Proposer l'abonnement après 3 secondes
+                setTimeout(() => askPushPermission(reg), 3000);
+            }
+        });
+    });
+}
+
+async function askPushPermission(reg) {
+    // Ne pas demander si déjà refusé
+    if (Notification.permission === 'denied') return;
+    if (Notification.permission === 'granted') {
+        await subscribePush(reg);
+        return;
+    }
+
+    // Afficher une bannière douce avant le prompt natif
+    const banner = document.getElementById('push-banner');
+    if (banner) banner.style.display = 'flex';
+}
+
+async function enablePush() {
+    const banner = document.getElementById('push-banner');
+    if (banner) banner.style.display = 'none';
+
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+    await subscribePush(reg);
+}
+
+function dismissPush() {
+    const banner = document.getElementById('push-banner');
+    if (banner) banner.style.display = 'none';
+    // Ne plus demander pendant 7 jours
+    localStorage.setItem('push_dismissed', Date.now() + 7 * 86400000);
+}
+
+async function subscribePush(reg) {
+    // Vérifier si on a récemment refusé la bannière
+    const dismissed = localStorage.getItem('push_dismissed');
+    if (dismissed && Date.now() < parseInt(dismissed)) return;
+
+    try {
+        // Récupérer la clé publique VAPID
+        const res    = await fetch('/push/vapid-public-key');
+        const { key } = await res.json();
+
+        const sub = await reg.pushManager.subscribe({
+            userVisibleOnly:      true,
+            applicationServerKey: urlBase64ToUint8Array(key),
+        });
+
+        // Envoyer au serveur
+        await fetch('/push/subscribe', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(sub),
+        });
+
+    } catch (e) {
+        console.log('Push subscribe error:', e);
+    }
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw     = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+</script>
+
+{# Bannière douce d'invitation aux notifications #}
+<div id="push-banner"
+     style="display:none;position:fixed;bottom:calc(var(--bottom-h,0px) + env(safe-area-inset-bottom) + 12px);
+            left:12px;right:12px;z-index:150;
+            background:var(--forest);color:white;
+            border-radius:16px;padding:1rem 1.2rem;
+            box-shadow:0 8px 32px rgba(0,0,0,.2);
+            align-items:center;gap:.8rem;flex-wrap:wrap;">
+    <span style="font-size:1.1rem;">🔔</span>
+    <div style="flex:1;min-width:200px;">
+        <div style="font-weight:600;font-size:.88rem;">Activer les notifications</div>
+        <div style="font-size:.78rem;opacity:.8;margin-top:2px;">Soyez alerté des nouveaux événements et notes</div>
+    </div>
+    <div style="display:flex;gap:.5rem;">
+        <button onclick="dismissPush()"
+                style="padding:.4rem .8rem;border-radius:100px;background:rgba(255,255,255,.15);
+                       border:none;color:white;font-size:.78rem;cursor:pointer;">
+            Plus tard
+        </button>
+        <button onclick="enablePush()"
+                style="padding:.4rem .9rem;border-radius:100px;background:white;
+                       border:none;color:var(--forest);font-size:.78rem;font-weight:600;cursor:pointer;">
+            Activer
+        </button>
+    </div>
+</div>
+{% endif %}
+</html>

@@ -1,0 +1,565 @@
+{% extends 'base.html.twig' %}
+{% block title %}Calendrier — {{ child.firstName }} — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── PALETTE TRAIN ── */
+:root {
+    --tr-sky:      #E8F4FD;
+    --tr-green:    #4A7C59;
+    --tr-green-l:  #6BAE7A;
+    --tr-loco:     #2C3E50;
+    --tr-loco-l:   #3D5166;
+    --tr-red:      #C0392B;
+    --tr-yellow:   #F1C40F;
+    --tr-wood:     #8B6914;
+    --tr-rail:     #7F8C8D;
+    --tr-smoke:    rgba(200,210,220,.6);
+    --tr-ink:      #1C1C1A;
+    --tr-muted:    #6B7280;
+}
+
+/* ── FOND PAYSAGE ── */
+body {
+    background:
+        /* nuages */
+        radial-gradient(ellipse 60px 30px at 15% 12%, rgba(255,255,255,.9) 0%, transparent 100%),
+        radial-gradient(ellipse 40px 22px at 22% 9%,  rgba(255,255,255,.7) 0%, transparent 100%),
+        radial-gradient(ellipse 80px 35px at 70% 8%,  rgba(255,255,255,.85) 0%, transparent 100%),
+        radial-gradient(ellipse 50px 25px at 78% 5%,  rgba(255,255,255,.6) 0%, transparent 100%),
+        /* ciel dégradé */
+        linear-gradient(180deg, #B8D4E8 0%, #D6EAF8 40%, #EAF4F8 70%, #E8F5E0 100%) !important;
+    min-height: 100vh;
+}
+
+/* ── BLOC SEMAINE ── */
+.tr-week {
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    border: 2px solid rgba(255,255,255,.9);
+    padding: 1.2rem 1.2rem .5rem;
+    padding-top: 3rem; /* espace pour la fumée */
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(44,62,80,.12), inset 0 1px 0 rgba(255,255,255,.8);
+    position: relative;
+    overflow: visible; /* fumée et encadrement aujourd'hui */
+}
+
+/* Herbe sous chaque semaine */
+.tr-week::after {
+    content: '';
+    display: block;
+    height: 8px;
+    margin: .8rem -1.2rem -.5rem;
+    background:
+        repeating-linear-gradient(90deg,
+            var(--tr-green-l) 0, var(--tr-green-l) 3px,
+            var(--tr-green)   3px, var(--tr-green)   7px,
+            #5A9A6A 7px, #5A9A6A 10px,
+            var(--tr-green-l) 10px, var(--tr-green-l) 14px
+        );
+    border-radius: 0 0 18px 18px;
+}
+
+/* ── RANGÉE ── */
+.tr-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: .6rem;
+    position: relative;
+}
+
+/* Rails */
+.tr-row::before {
+    content: '';
+    position: absolute;
+    bottom: .4rem; left: 0; right: 0;
+    height: 14px;
+    background:
+        /* traverses */
+        repeating-linear-gradient(90deg,
+            transparent 0, transparent 18px,
+            var(--tr-wood) 18px, var(--tr-wood) 26px
+        ),
+        /* rails haut et bas */
+        linear-gradient(180deg,
+            var(--tr-rail) 0, var(--tr-rail) 3px,
+            transparent 3px, transparent 8px,
+            var(--tr-rail) 8px, var(--tr-rail) 11px
+        );
+    opacity: .5;
+    pointer-events: none;
+}
+
+/* ── LOCOMOTIVE ── */
+.loco-wrap { flex-shrink:0; width:90px; margin-right:2px; }
+
+.loco-body {
+    background: linear-gradient(135deg, var(--tr-loco) 0%, var(--tr-loco-l) 100%);
+    border-radius: 16px 8px 4px 16px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    position: relative;
+    padding: .6rem .4rem;
+    box-shadow: 4px 0 16px rgba(44,62,80,.3), inset 0 1px 0 rgba(255,255,255,.1);
+}
+/* Cheminée */
+.loco-chimney {
+    position: absolute;
+    top: -18px; left: 16px;
+    width: 14px; height: 22px;
+    background: var(--tr-loco);
+    border-radius: 3px 3px 0 0;
+}
+.loco-chimney::before {
+    content: '';
+    position: absolute;
+    top: -5px; left: -4px;
+    width: 22px; height: 9px;
+    background: var(--tr-loco-l);
+    border-radius: 4px;
+}
+/* Fumée animée */
+.loco-smoke {
+    position: absolute;
+    top: -45px; left: 14px;
+    display: flex; flex-direction: column-reverse; gap: 2px; align-items: center;
+    pointer-events: none;
+    z-index: 10;
+}
+.loco-smoke span {
+    display: block;
+    background: rgba(180,200,220,.75);
+    border-radius: 50%;
+    animation: puff 2.5s ease-out infinite;
+}
+.loco-smoke span:nth-child(1) { width:8px;  height:8px;  animation-delay:0s; }
+.loco-smoke span:nth-child(2) { width:13px; height:13px; animation-delay:.5s; }
+.loco-smoke span:nth-child(3) { width:18px; height:18px; animation-delay:1s;  }
+@keyframes puff {
+    0%   { transform: translateY(0)    scale(1);   opacity:.9; }
+    60%  { transform: translateY(-16px) scale(1.3); opacity:.5; }
+    100% { transform: translateY(-30px) scale(1.6); opacity:0; }
+}
+
+/* Fenêtre cabine */
+.loco-window {
+    width: 26px; height: 18px;
+    background: linear-gradient(135deg, #87CEEB, #B0E0FF);
+    border-radius: 4px;
+    border: 2px solid rgba(255,255,255,.3);
+    margin-bottom: 5px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.2);
+}
+/* Lumière frontale */
+.loco-light {
+    position: absolute;
+    right: -4px; top: 50%;
+    transform: translateY(-50%);
+    width: 10px; height: 10px;
+    background: var(--tr-yellow);
+    border-radius: 50%;
+    box-shadow: 0 0 12px 4px rgba(241,196,15,.5);
+}
+.loco-name {
+    font-family: 'Fraunces', serif;
+    font-size: .6rem; font-style: italic;
+    text-align: center; line-height: 1.3;
+    text-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.loco-wheels {
+    display: flex; gap: 7px;
+    justify-content: center;
+    padding: 4px 8px 0;
+}
+.loco-wheel {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #666, #111);
+    border: 3px solid #888;
+    box-shadow: 0 2px 4px rgba(0,0,0,.4);
+    position: relative;
+}
+.loco-wheel::after {
+    content:''; position:absolute; inset:3px;
+    border-radius:50%;
+    border: 1.5px solid #555;
+}
+
+/* ── ATTELAGE ── */
+.tr-coupler {
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin-bottom: 1.4rem;
+    width: 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.tr-coupler-bar { width:10px; height:3px; background:#999; border-radius:2px; }
+.tr-coupler-pin { width:3px; height:6px; background:#777; border-radius:1px; }
+
+/* ── WAGON ── */
+.wagon-wrap { flex-shrink: 0; width: 108px; padding: 3px; }
+
+.wagon-wrap.today {
+    padding: 0;
+    border-radius: 14px 14px 6px 6px;
+    border: 3px solid var(--tr-yellow);
+    box-shadow: 0 0 20px rgba(241,196,15,.5);
+    background: transparent;
+}
+
+.wagon-body {
+    border-radius: 12px 12px 4px 4px;
+    padding: .55rem .55rem .5rem;
+    display: flex; flex-direction: column; gap: 3px;
+    position: relative;
+    transition: filter .15s, transform .15s;
+    /* Panneau latéral simulé */
+    box-shadow:
+        inset 0 -3px 0 rgba(0,0,0,.1),
+        inset 3px 0 0 rgba(255,255,255,.15),
+        inset -3px 0 0 rgba(0,0,0,.08),
+        0 4px 12px rgba(0,0,0,.1);
+}
+.wagon-body::before {
+    /* Bande de couleur en bas du wagon */
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 5px;
+    background: rgba(0,0,0,.15);
+    border-radius: 0 0 4px 4px;
+}
+/* Couleurs alternées par jour */
+.wagon-wrap:nth-child(2n)  .wagon-body { background: linear-gradient(160deg,#D4E6F1,#AED6F1); }
+.wagon-wrap:nth-child(3n)  .wagon-body { background: linear-gradient(160deg,#D5F5E3,#A9DFBF); }
+.wagon-wrap:nth-child(4n)  .wagon-body { background: linear-gradient(160deg,#FDEBD0,#FAD7A0); }
+.wagon-wrap:nth-child(5n)  .wagon-body { background: linear-gradient(160deg,#F9EBEA,#F1948A); }
+.wagon-wrap:nth-child(6n)  .wagon-body { background: linear-gradient(160deg,#EAF2FF,#C5D8FA); }
+.wagon-wrap:nth-child(7n)  .wagon-body { background: linear-gradient(160deg,#FEF9E7,#F7DC6F); }
+.wagon-wrap:nth-child(8n)  .wagon-body { background: linear-gradient(160deg,#F3E5F5,#CE93D8); }
+
+.wagon-wrap:hover .wagon-body { filter: brightness(1.05); transform: translateY(-4px); }
+.wagon-wrap.today .wagon-body {
+    background: linear-gradient(160deg,#FFF3CD,#FFD700) !important;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.1), 0 4px 16px rgba(241,196,15,.3);
+}
+
+/* Fenêtre du wagon */
+.wagon-window {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 16px; height: 12px;
+    background: linear-gradient(135deg,#87CEEB,#B0E0FF);
+    border-radius: 3px 3px 0 0;
+    border: 1.5px solid rgba(255,255,255,.5);
+    opacity: .7;
+}
+
+.wagon-day {
+    font-size: .55rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: rgba(0,0,0,.5);
+}
+.wagon-date {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: rgba(0,0,0,.7);
+    line-height: 1; margin-bottom: 3px;
+}
+.wagon-wrap.today .wagon-date { color: var(--tr-loco); }
+
+/* Événement */
+.ev-block {
+    background: rgba(255,255,255,.7);
+    border-radius: 7px;
+    padding: .3rem .4rem;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,.8);
+    transition: all .12s;
+    backdrop-filter: blur(2px);
+}
+.ev-block:hover { background: var(--tr-loco); border-color: var(--tr-loco); }
+.ev-block:hover .ev-label { color: white; }
+.ev-label {
+    font-size: .54rem; line-height: 1.35;
+    color: rgba(0,0,0,.7);
+    display: flex; align-items: flex-start; gap: 2px;
+}
+.ev-icon { font-size: .6rem; flex-shrink: 0; margin-top: 1px; }
+.ev-photo {
+    margin-top: 3px; border-radius: 5px; overflow: hidden;
+}
+.ev-photo img {
+    width: 100%; height: auto; display: block;
+    border-radius: 5px; max-height: 90px;
+    object-fit: contain;
+}
+
+/* Roues wagon */
+.w-wheels {
+    display: flex; gap: 8px;
+    justify-content: center;
+    padding: 3px 8px 0;
+}
+.w-wheel {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%,#666,#111);
+    border: 2px solid #888;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
+/* Wagon vide */
+.wagon-empty .wagon-body { background: linear-gradient(160deg,rgba(255,255,255,.4),rgba(255,255,255,.2)) !important; box-shadow: none; border: 1px dashed rgba(0,0,0,.1); }
+.wagon-empty .wagon-window { display: none; }
+
+/* ── MODAL ── */
+.tr-modal-inner {
+    background: white;
+    border-radius: 20px;
+    width: 100%; max-width: 420px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(44,62,80,.25);
+    border: 2px solid rgba(255,255,255,.9);
+}
+.tr-modal-band {
+    height: 5px;
+    background: repeating-linear-gradient(90deg,
+        var(--tr-red) 0, var(--tr-red) 12px,
+        var(--tr-yellow) 12px, var(--tr-yellow) 24px,
+        var(--tr-loco) 24px, var(--tr-loco) 36px);
+}
+
+@media print {
+    @page { size: A4 landscape; margin: .8cm; }
+    nav, .no-print { display: none !important; }
+    body { background: white !important; }
+    .tr-week { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+    .ev-photo img { max-height: 70px !important; }
+    .loco-smoke { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main">
+
+    {# Header #}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;" class="no-print">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
+            🚂 Calendrier de <em style="font-style:italic;color:var(--tr-green,#4A7C59)">{{ child.firstName }}</em>
+        </h1>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+            {% for c in children %}
+            <a href="{{ path('app_train', {'childId': c.id}) }}"
+               style="display:flex;align-items:center;gap:.5rem;padding:.4rem .85rem;
+                      border-radius:100px;border:1.5px solid {% if c.id == child.id %}#4A7C59{% else %}var(--sand){% endif %};
+                      background:{% if c.id == child.id %}rgba(74,124,89,.07){% else %}white{% endif %};
+                      text-decoration:none;color:var(--ink);font-size:.82rem;font-weight:500;">
+                {% if c.avatarPath %}
+                <img src="/uploads/events/{{ c.avatarPath }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+                {% else %}
+                <div style="width:20px;height:20px;border-radius:50%;background:var(--terracotta);display:flex;align-items:center;justify-content:center;color:white;font-size:.55rem;font-weight:700;">{{ c.firstName|first|upper }}</div>
+                {% endif %}
+                {{ c.firstName }}
+            </a>
+            {% endfor %}
+            <a href="{{ path('app_note_index', {'childId': child.id}) }}" class="btn btn-ghost btn-sm">📝 Notes</a>
+            <a href="{{ path('app_event_new', {'childId': child.id}) }}" class="btn btn-secondary btn-sm">＋ Événement</a>
+        </div>
+    </div>
+
+    {% set joursFR = {'Mon':'Lun','Tue':'Mar','Wed':'Mer','Thu':'Jeu','Fri':'Ven','Sat':'Sam','Sun':'Dim'} %}
+    {% set today   = 'now'|date('Y-m-d') %}
+
+    {% for weekOffset in 0..11 %}
+        {% set wStart = 'monday this week'|date_modify('+' ~ weekOffset ~ ' weeks') %}
+        {% set wEnd   = wStart|date_modify('+6 days') %}
+
+        {% if wEnd|date('Y-m') >= 'now'|date('Y-m') or weekOffset == 0 %}
+        <div class="tr-week" id="week-{{ weekOffset }}">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;" class="no-print">
+                <div style="font-family:'Fraunces',serif;font-size:.9rem;color:var(--tr-muted,#6B7280);">
+                    Semaine {{ wStart|date('W') }} · du {{ wStart|date('d') }} au {{ wEnd|date('d F Y') }}
+                </div>
+                <button onclick="printWeek({{ weekOffset }})"
+                        style="padding:.3rem .85rem;border-radius:100px;font-size:.72rem;
+                               border:1.5px solid var(--sand);background:white;cursor:pointer;">
+                    🖨️ Imprimer
+                </button>
+            </div>
+
+            <div class="tr-row">
+
+                {# ── LOCOMOTIVE ── #}
+                <div class="loco-wrap">
+                    <div style="position:relative;">
+                        <div class="loco-smoke">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="loco-body">
+                            <div class="loco-chimney"></div>
+                            <div class="loco-light"></div>
+                            {% if child.avatarPath %}
+                            <img src="/uploads/events/{{ child.avatarPath }}"
+                                 style="width:34px;height:34px;border-radius:50%;object-fit:cover;
+                                        border:2px solid rgba(255,255,255,.4);margin-bottom:4px;"
+                                 onerror="this.outerHTML='<div class=loco-window></div>'">
+                            {% else %}
+                            <div class="loco-window"></div>
+                            {% endif %}
+                            <div class="loco-name">{{ child.firstName }}<br>S{{ wStart|date('W') }}</div>
+                        </div>
+                    </div>
+                    <div class="loco-wheels">
+                        <div class="loco-wheel"></div>
+                        <div class="loco-wheel"></div>
+                        <div class="loco-wheel"></div>
+                    </div>
+                </div>
+
+                {% for d in 0..6 %}
+                    {% set day     = wStart|date_modify('+' ~ d ~ ' days') %}
+                    {% set dayKey  = day|date('Y-m-d') %}
+                    {% set isToday = dayKey == today %}
+                    {% set dayEvts = weekByDay[weekOffset] is defined and weekByDay[weekOffset][dayKey] is defined
+                                     ? weekByDay[weekOffset][dayKey] : [] %}
+
+                    <div class="tr-coupler">
+                        <div class="tr-coupler-bar"></div>
+                        <div class="tr-coupler-pin"></div>
+                        <div class="tr-coupler-bar"></div>
+                    </div>
+
+                    <div class="wagon-wrap {% if isToday %}today{% endif %} {% if dayEvts is empty %}wagon-empty{% endif %}">
+                        <div class="wagon-body">
+                            <div class="wagon-window"></div>
+                            <div class="wagon-day">{{ joursFR[day|date('D')]|default(day|date('D')) }}{% if isToday %} ✦{% endif %}</div>
+                            <div class="wagon-date">{{ day|date('d') }}</div>
+
+                            {% for e in dayEvts %}
+                            {% if e.id %}
+                            <div class="ev-block"
+                                 onclick="openModal(
+                                     {{ e.id }},
+                                     '{{ e.title|e('html_attr') }}',
+                                     '{{ e.type }}',
+                                     '{{ e.startAt|date('d/m/Y') }}',
+                                     {% if e.endAt %}'{{ e.endAt|date('d/m/Y') }}'{% else %}null{% endif %},
+                                     {{ child.id }},
+                                     '{{ e.description ? e.description|e('html_attr') : '' }}',
+                                     {% if e.image %}'{{ '/uploads/events/' ~ e.image.filePath }}'{% else %}null{% endif %}
+                                 )">
+                                <div class="ev-label">
+                                    <span class="ev-icon">{% if e.type=='garde' %}🏠{% elseif e.type=='activite' %}🏃{% elseif e.type=='medical' %}🏥{% elseif e.type=='vacances' %}🌴{% else %}📌{% endif %}</span>
+                                    <span>{{ e.title|slice(0,18) }}{% if e.title|length > 18 %}…{% endif %}</span>
+                                </div>
+                                {% if e.image %}
+                                <div class="ev-photo">
+                                    <img src="/uploads/events/{{ e.image.filePath }}"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            {# Placeholder "Occupé" — événement caché #}
+                            <div style="background:rgba(0,0,0,.06);border-radius:7px;padding:.3rem .4rem;
+                                        border:1px dashed rgba(0,0,0,.12);">
+                                <div style="font-size:.54rem;color:rgba(0,0,0,.35);display:flex;align-items:center;gap:2px;">
+                                    <span>🔒</span><span>Occupé</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="w-wheels">
+                            <div class="w-wheel"></div>
+                            <div class="w-wheel"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    {# Légende #}
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:.9rem 1.2rem;
+                background:rgba(255,255,255,.7);border-radius:14px;backdrop-filter:blur(8px);" class="no-print">
+        <span style="font-size:.75rem;color:var(--tr-muted);">🏠 Garde · 🏃 Activité · 🏥 Médical · 🌴 Vacances · 📌 Autre</span>
+        <span style="font-size:.75rem;color:var(--tr-muted);display:flex;align-items:center;gap:.3rem;">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--tr-yellow);border:2px solid #999;"></span> Aujourd'hui
+        </span>
+        <span style="margin-left:auto;font-size:.72rem;color:var(--tr-muted);">Clic sur un événement · 🖨️ impression paysage</span>
+    </div>
+</div>
+
+{# Modal #}
+<div id="ev-modal" onclick="if(event.target===this)closeModal()"
+     style="display:none;position:fixed;inset:0;z-index:200;
+            background:rgba(44,62,80,.35);backdrop-filter:blur(6px);
+            align-items:center;justify-content:center;padding:1rem;" class="no-print">
+    <div class="tr-modal-inner" onclick="event.stopPropagation()">
+        <div class="tr-modal-band"></div>
+        <div id="modal-content" style="padding:1.5rem 1.5rem .8rem;"></div>
+        <div style="padding:.5rem 1.5rem 1.5rem;display:flex;gap:.5rem;justify-content:flex-end;">
+            <button onclick="closeModal()" class="btn btn-ghost btn-sm">Fermer</button>
+            <button onclick="deleteEvent()" class="btn btn-ghost btn-sm" style="color:var(--terracotta);border-color:var(--terracotta);">🗑️ Supprimer</button>
+            <a id="modal-edit" href="#" class="btn btn-primary btn-sm">✏️ Modifier</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const typeLabels = {garde:'🏠 Garde',activite:'🏃 Activité',medical:'🏥 Médical',vacances:'🌴 Vacances',autre:'📌 Autre'};
+let currentEventData = null;
+
+function openModal(id, title, type, start, end, childId, description, imageUrl) {
+    currentEventData = { id, childId };
+    const date = end && end !== start ? `Du ${start} au ${end}` : start;
+    document.getElementById('modal-content').innerHTML = `
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tr-muted,#6B7280);margin-bottom:.4rem;">${typeLabels[type]||type}</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;margin-bottom:.5rem;">${title}</h2>
+        <div style="font-size:.84rem;color:#6B7280;margin-bottom:${(description||imageUrl)?'.8rem':'0'};">📅 ${date}</div>
+        ${description ? `<p style="font-size:.85rem;line-height:1.5;color:#3D3D38;margin-bottom:${imageUrl?'.7rem':'0'};">${description}</p>` : ''}
+        ${imageUrl ? `<div style="border-radius:10px;overflow:hidden;"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;background:#f5f5f5;"></div>` : ''}
+    `;
+    document.getElementById('modal-edit').href = `/children/${childId}/events/${id}/edit`;
+    document.getElementById('ev-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('ev-modal').style.display = 'none';
+    currentEventData = null;
+}
+
+function deleteEvent() {
+    if (!currentEventData) return;
+    if (!confirm('Supprimer cet événement ?')) return;
+    fetch(`/children/${currentEventData.childId}/events/${currentEventData.id}/delete`, {
+        method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(d => { if (d.success) window.location.reload(); });
+}
+
+function printWeek(i) {
+    document.querySelectorAll('.tr-week').forEach((el, j) => el.style.display = j === i ? '' : 'none');
+    window.print();
+    document.querySelectorAll('.tr-week').forEach(el => el.style.display = '');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+{% endblock %}

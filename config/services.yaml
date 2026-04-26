@@ -1,0 +1,26 @@
+parameters:
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Service\LocalUploadService:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\NotificationService:
+        arguments:
+            $fromEmail:  '%env(MAILER_FROM_EMAIL)%'
+            $fromName:   '%env(MAILER_FROM_NAME)%'
+            $appBaseUrl: '%env(APP_BASE_URL)%'
+
+    App\Security\ChildVoter:
+        tags: ['security.voter']

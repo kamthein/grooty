@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+{% block title %}Connexion — Grooty{% endblock %}
+
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;">
+<div style="width:100%;max-width:420px;">
+
+    <div style="text-align:center;margin-bottom:2rem;">
+        <div style="font-family:'Fraunces',serif;font-size:2.5rem;color:var(--forest)">
+            Gr<em style="color:var(--terracotta);font-style:italic">oo</em>ty
+        </div>
+        <p style="color:var(--muted);margin-top:0.4rem;font-size:0.9rem">Le carnet de vie partagé de votre enfant</p>
+    </div>
+
+    <div class="card">
+        <h1 class="card-title">Connexion</h1>
+
+        {% if error %}
+            <div class="flash flash-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
+
+        <form method="post">
+            <div class="form-group">
+                <label class="form-label" for="username">Email</label>
+                <input class="form-control" id="username" type="email" name="_username"
+                       value="{{ last_username }}" autocomplete="email" autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Mot de passe</label>
+                <input class="form-control" id="password" type="password" name="_password" autocomplete="current-password">
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.2rem;">
+                <input type="checkbox" id="remember" name="_remember_me" style="accent-color:var(--forest)">
+                <label for="remember" style="font-size:0.85rem;color:var(--muted)">Se souvenir de moi</label>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button class="btn btn-primary" style="width:100%;justify-content:center;" type="submit">
+                Se connecter
+            </button>
+        </form>
+    </div>
+
+    <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--muted)">
+        Pas encore de compte ?
+        <a href="{{ path('app_register') }}" style="color:var(--forest);font-weight:500">Créer un compte</a>
+    </p>
+</div>
+</div>
+{% endblock %}

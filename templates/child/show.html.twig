@@ -1,0 +1,196 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ child.firstName }} — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+.guardian-row {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .8rem 0; border-bottom: 1px solid var(--warm);
+}
+.guardian-badges { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-left: auto; }
+@media (max-width: 480px) {
+    .guardian-row { flex-wrap: wrap; gap: .5rem; }
+    .guardian-badges { margin-left: 0; width: 100%; padding-left: 52px; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:720px;">
+
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+        <a href="{{ path('app_child_index') }}" class="btn btn-ghost btn-sm">← Retour</a>
+        <h1 style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:300;flex:1;">
+            Profil de <em style="font-style:italic;color:var(--terracotta)">{{ child.firstName }}</em>
+        </h1>
+        <div style="display:flex;gap:.5rem;">
+            <a href="{{ path('app_event_index', {'childId': child.id}) }}" class="btn btn-primary btn-sm">📅 Calendrier</a>
+            {% if is_granted('CHILD_ADMIN', child) %}
+            <a href="{{ path('app_child_edit', {'id': child.id}) }}" class="btn btn-ghost btn-sm">✏️ Modifier</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# INFOS ENFANT #}
+    <div class="card" style="margin-bottom:1.2rem;">
+        <div style="display:flex;align-items:center;gap:1.5rem;">
+            {% if child.avatarPath %}
+            <img src="/uploads/events/{{ child.avatarPath }}"
+                 style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--sand);"
+                 onerror="this.style.display='none'">
+            {% else %}
+            <div style="width:72px;height:72px;border-radius:50%;background:var(--forest);
+                        display:flex;align-items:center;justify-content:center;
+                        color:white;font-family:'Fraunces',serif;font-size:2rem;flex-shrink:0;">
+                {{ child.firstName|first|upper }}
+            </div>
+            {% endif %}
+            <div>
+                <div style="font-family:'Fraunces',serif;font-size:1.4rem;">{{ child.firstName }}</div>
+                {% if child.birthDate %}
+                <div style="font-size:.85rem;color:var(--muted);margin-top:.2rem;">
+                    Né(e) le {{ child.birthDate|date('d/m/Y') }}
+                    · {{ ("now"|date("Y")) - (child.birthDate|date("Y")) }} ans
+                </div>
+                {% endif %}
+                <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;">
+                    Profil créé le {{ child.createdAt|date('d/m/Y') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# LIEN DE PARTAGE #}
+    <div class="card" style="margin-bottom:1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;">
+            <h2 class="card-title" style="margin:0;">🔗 Lien de partage</h2>
+        </div>
+        {% if child.shareToken %}
+        <div style="background:var(--warm);border-radius:10px;padding:.8rem 1rem;font-size:.82rem;
+                    color:var(--muted);word-break:break-all;margin-bottom:.8rem;">
+            {{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button onclick="copyLink('{{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}')"
+                    class="btn btn-primary btn-sm">📋 Copier le lien</button>
+            <a href="{{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}" target="_blank"
+               class="btn btn-ghost btn-sm">👁️ Aperçu</a>
+            {% if is_granted('CHILD_ADMIN', child) %}
+            <form method="post" action="{{ path('app_child_share_revoke', {'id': child.id}) }}"
+                  onsubmit="return confirm('Désactiver le lien ? Les personnes qui l\'ont ne pourront plus accéder.')">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--terracotta);">✕ Désactiver</button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:.8rem;">
+            Partagez un lien de lecture seule — semaine en cours + suivante — avec la nounou, mamie, ou qui vous voulez. Sans inscription.
+        </p>
+        <form method="post" action="{{ path('app_child_share', {'id': child.id}) }}">
+            <button type="submit" class="btn btn-primary btn-sm">🔗 Générer un lien de partage</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="card" style="margin-bottom:1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;">
+            <h2 class="card-title" style="margin:0;">👥 Gardiens ({{ guardians|length }})</h2>
+            {% if is_granted('CHILD_ADMIN', child) %}
+            <a href="{{ path('app_child_invite', {'id': child.id}) }}" class="btn btn-secondary btn-sm">＋ Inviter</a>
+            {% endif %}
+        </div>
+
+        {% for cg in guardians %}
+        <div style="display:flex;align-items:center;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--warm);">
+            <div style="width:40px;height:40px;border-radius:50%;
+                        background:{% if loop.first %}var(--terracotta){% else %}var(--forest){% endif %};
+                        display:flex;align-items:center;justify-content:center;
+                        color:white;font-size:.8rem;font-weight:700;flex-shrink:0;">
+                {{ cg.guardian.firstName|first|upper }}{{ cg.guardian.lastName|first|upper }}
+            </div>
+            <div style="flex:1;">
+                <div style="font-weight:500;font-size:.9rem;">
+                    {% if cg.guardian %}{{ cg.guardian.fullName }}{% else %}{{ cg.inviteEmail }}{% endif %}
+                </div>
+                <div style="font-size:.75rem;color:var(--muted);">
+                    {% if cg.guardian %}{{ cg.guardian.email }}{% else %}Compte non créé{% endif %}
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;background:var(--warm);color:var(--muted);">
+                    {% if cg.role == 'parent' %}👨‍👩‍👧 Parent
+                    {% elseif cg.role == 'nounou' %}🧸 Nounou
+                    {% elseif cg.role == 'grandparent' %}👴 Grand-parent
+                    {% else %}👤 Autre{% endif %}
+                </span>
+                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;
+                             {% if cg.isAdmin() %}background:rgba(61,90,71,.12);color:var(--forest);
+                             {% elseif cg.canEdit() %}background:rgba(196,113,74,.1);color:var(--terracotta);
+                             {% else %}background:var(--sand);color:var(--muted);{% endif %}">
+                    {% if cg.isAdmin() %}👑 Admin{% elseif cg.canEdit() %}✏️ Éditeur{% else %}👁️ Lecteur{% endif %}
+                </span>
+                {% if not cg.inviteAccepted %}
+                <span style="font-size:.7rem;background:var(--sand);color:var(--muted);padding:.15rem .5rem;border-radius:100px;">⏳ En attente</span>
+                {% endif %}
+            </div>
+            {% if is_granted('CHILD_ADMIN', child) and not cg.isAdmin() %}
+            <form method="post" action="{{ path('app_guardian_remove', {'id': child.id, 'cgId': cg.id}) }}"
+                  onsubmit="return confirm('Retirer ce gardien ?')">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--terracotta);">✕</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {# SUPPRESSION ENFANT #}
+    {% if is_granted('CHILD_ADMIN', child) %}
+    <div class="card" style="border-color:rgba(196,113,74,.3);">
+        <h2 style="font-family:'Fraunces',serif;font-size:1rem;font-weight:400;color:var(--terracotta);margin-bottom:.5rem;">
+            ⚠️ Zone dangereuse
+        </h2>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">
+            Supprimer {{ child.firstName }} supprimera définitivement tous ses événements, notes et photos.
+        </p>
+        <button onclick="document.getElementById('delete-child-modal').style.display='flex'"
+                class="btn btn-ghost" style="color:var(--terracotta);border-color:var(--terracotta);">
+            🗑️ Supprimer {{ child.firstName }}
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+{# Modal confirmation suppression enfant #}
+<div id="delete-child-modal"
+     style="display:none;position:fixed;inset:0;z-index:200;background:rgba(28,28,26,.5);
+            backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:var(--cream);border-radius:20px;width:100%;max-width:420px;padding:2rem;
+                box-shadow:0 20px 60px rgba(0,0,0,.2);">
+        <h2 style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;margin-bottom:.8rem;">
+            Supprimer {{ child.firstName }} ?
+        </h2>
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">
+            Cette action est <strong>irréversible</strong>. Tous les événements, notes et photos de {{ child.firstName }} seront définitivement supprimés.
+        </p>
+        <div style="display:flex;gap:.8rem;justify-content:flex-end;">
+            <button onclick="document.getElementById('delete-child-modal').style.display='none'"
+                    class="btn btn-ghost">Annuler</button>
+            <form method="post" action="{{ path('app_child_delete', {'id': child.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_child_' ~ child.id) }}">
+                <button type="submit" class="btn btn-secondary">✓ Oui, tout supprimer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block javascripts %}
+<script>
+function copyLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        event.target.textContent = '✓ Copié !';
+        setTimeout(() => event.target.textContent = '📋 Copier le lien', 2000);
+    });
+}
+</script>
+{% endblock %}

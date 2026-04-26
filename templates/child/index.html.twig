@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+{% block title %}Mes enfants — Grooty{% endblock %}
+
+{% block body %}
+<div class="main">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
+            Mes <em style="font-style:italic;color:var(--terracotta)">enfants</em>
+        </h1>
+        <a href="{{ path('app_child_new') }}" class="btn btn-secondary">＋ Ajouter un enfant</a>
+    </div>
+
+    {% if childGuardians is empty %}
+        <div class="card" style="text-align:center;padding:3rem;">
+            <div style="font-size:3rem;margin-bottom:1rem;">👶</div>
+            <h2 style="font-family:'Fraunces',serif;font-weight:300;margin-bottom:.5rem;">Aucun enfant pour l'instant</h2>
+            <p style="color:var(--muted);margin-bottom:1.5rem;">Ajoutez votre premier enfant pour démarrer.</p>
+            <a href="{{ path('app_child_new') }}" class="btn btn-primary">＋ Ajouter</a>
+        </div>
+    {% else %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">
+            {% for cg in childGuardians %}
+            {% set child = cg.child %}
+            <div class="card" style="position:relative;overflow:hidden;">
+                <div style="height:4px;background:var(--terracotta);margin:-1.5rem -1.5rem 1rem;"></div>
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                    {% if child.avatarPath %}
+                    <img src="/uploads/events/{{ child.avatarPath }}"
+                         style="width:52px;height:52px;border-radius:50%;object-fit:cover;
+                                border:2px solid var(--sand);flex-shrink:0;"
+                         onerror="this.outerHTML='<div style=\'width:52px;height:52px;border-radius:50%;background:var(--forest);display:flex;align-items:center;justify-content:center;color:white;font-family:Fraunces,serif;font-size:1.3rem;flex-shrink:0;\'>{{ child.firstName|first|upper }}</div>'">
+                    {% else %}
+                    <div style="width:52px;height:52px;border-radius:50%;background:var(--forest);
+                                display:flex;align-items:center;justify-content:center;
+                                color:white;font-family:'Fraunces',serif;font-size:1.3rem;flex-shrink:0;">
+                        {{ child.firstName|first|upper }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <div style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;">{{ child.firstName }}</div>
+                        {% if child.birthDate %}
+                        <div style="font-size:0.75rem;color:var(--muted);">
+                            Né(e) le {{ child.birthDate|date('d/m/Y') }}
+                        </div>
+                        {% endif %}
+                        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">
+                            {% if cg.isAdmin() %}👑 Administrateur{% elseif cg.canEdit() %}✏️ Peut modifier{% else %}👁️ Lecture seule{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <a href="{{ path('app_event_index', {'childId': child.id}) }}" class="btn btn-primary btn-sm">📅 Calendrier</a>
+                    <a href="{{ path('app_child_show',  {'id': child.id}) }}"      class="btn btn-ghost btn-sm">⚙️ Gérer</a>
+                    {% if cg.isAdmin() %}
+                    <a href="{{ path('app_child_invite', {'id': child.id}) }}"    class="btn btn-ghost btn-sm">＋ Inviter</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

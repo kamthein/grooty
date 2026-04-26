@@ -1,0 +1,539 @@
+{% extends 'base.html.twig' %}
+{% block title %}Calendrier — {{ child.firstName }} — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── PALETTE HELLO KITTY ── */
+:root {
+    --hk-pink:      #FF85A1;
+    --hk-pink-soft: #FFD6E0;
+    --hk-pink-pale: #FFF0F5;
+    --hk-red:       #E8355A;
+    --hk-yellow:    #FFE566;
+    --hk-bow:       #FF3366;
+    --hk-white:     #FFFFFF;
+    --hk-ink:       #3D2B3D;
+    --hk-muted:     #B08090;
+}
+
+body { background: repeating-linear-gradient(135deg, #FFF0F5 0px, #FFF0F5 20px, #FFE8F0 20px, #FFE8F0 40px) !important; }
+
+/* ── SEMAINE ── */
+.hk-week {
+    background: var(--hk-white);
+    border-radius: 24px;
+    border: 2.5px solid var(--hk-pink);
+    padding: 1.2rem 1.2rem .8rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 24px rgba(255,133,161,.15);
+    position: relative;
+    overflow: hidden;
+}
+.hk-week::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, var(--hk-pink) 0,var(--hk-pink) 12px, var(--hk-yellow) 12px, var(--hk-yellow) 24px);
+}
+
+/* ── RANGÉE ── */
+.hk-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    position: relative;
+}
+
+/* Sol à fleurs */
+.hk-row::after {
+    content: '🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸🌸';
+    position: absolute;
+    bottom: .1rem;
+    left: 0; right: 0;
+    font-size: .5rem;
+    letter-spacing: 4px;
+    opacity: .4;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* ── KITTY HEAD (locomotive) ── */
+.kitty-head {
+    flex-shrink: 0;
+    width: 110px;
+    margin-right: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Conteneur global tête+oreilles */
+.kitty-outer {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+/* Oreilles — derrière la tête */
+.kitty-ear {
+    position: absolute;
+    top: 0;
+    width: 32px; height: 36px;
+    background: var(--hk-white);
+    border: 3px solid var(--hk-pink);
+    border-radius: 50% 50% 0 0;
+    z-index: 0;
+}
+.kitty-ear.left  { left: 8px;  transform: rotate(-12deg); }
+.kitty-ear.right { right: 8px; transform: rotate(12deg); }
+/* Intérieur oreille rose */
+.kitty-ear::after {
+    content: '';
+    position: absolute;
+    inset: 5px 6px 0;
+    background: var(--hk-pink-soft);
+    border-radius: 50% 50% 0 0;
+}
+
+/* Nœud sur l'oreille droite */
+.kitty-bow-ear {
+    position: absolute;
+    top: -6px; right: 2px;
+    font-size: 1.4rem;
+    z-index: 3;
+    filter: drop-shadow(0 1px 2px rgba(255,51,102,.3));
+}
+
+/* Visage principal */
+.kitty-face {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 90px;
+    background: var(--hk-white);
+    border-radius: 50%;
+    border: 3px solid var(--hk-pink);
+    box-shadow: 0 6px 20px rgba(255,133,161,.25), inset 0 -2px 8px rgba(255,133,161,.1);
+    z-index: 1;
+    overflow: hidden; /* pour l'avatar */
+}
+
+/* Avatar en fond de visage */
+.kitty-avatar {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    opacity: .25; /* discret en fond */
+}
+
+/* Overlay features */
+.kitty-features {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 14px;
+    z-index: 2;
+}
+
+/* Yeux */
+.kitty-eyes {
+    display: flex; gap: 18px;
+    margin-bottom: 4px;
+}
+.kitty-eye {
+    width: 9px; height: 9px;
+    background: var(--hk-ink);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* Nez */
+.kitty-nose {
+    width: 7px; height: 5px;
+    background: var(--hk-yellow);
+    border-radius: 50%;
+    margin-bottom: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+/* Moustaches — positionnées absolument sur le visage */
+.kitty-whiskers {
+    position: absolute;
+    bottom: 22px; left: 0; right: 0;
+    display: flex; justify-content: space-between;
+    padding: 0 8px;
+    z-index: 3;
+}
+.kitty-whiskers span {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.kitty-whiskers span i {
+    display: block;
+    width: 22px; height: 1.5px;
+    background: rgba(176,128,144,.5);
+    border-radius: 2px;
+}
+.kitty-whiskers span:first-child i { transform-origin: right center; }
+.kitty-whiskers span:last-child  i { transform-origin: left center; }
+
+.kitty-name {
+    font-family: 'Fraunces', serif;
+    font-size: .65rem; font-style: italic;
+    text-align: center; line-height: 1.3;
+    color: var(--hk-pink);
+    margin-top: 5px;
+    text-shadow: 0 1px 2px rgba(255,133,161,.2);
+}
+
+/* ── CASE JOUR ── */
+.hk-day {
+    flex-shrink: 0;
+    width: 108px;
+    display: flex;
+    flex-direction: column;
+}
+.hk-card {
+    background: var(--hk-pink-pale);
+    border: 2px solid var(--hk-pink-soft);
+    border-radius: 16px;
+    padding: .55rem .55rem .5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all .15s;
+    position: relative;
+}
+.hk-card:hover { border-color: var(--hk-pink); transform: translateY(-3px); }
+.hk-day.today .hk-card {
+    border-color: var(--hk-red) !important;
+    background: rgba(232,53,90,.05);
+}
+/* Déco coin */
+.hk-card::after {
+    content: '🎀';
+    position: absolute;
+    top: -8px; right: 4px;
+    font-size: .7rem;
+    display: none;
+}
+.hk-day.today .hk-card::after { display: block; }
+
+.hk-dayname {
+    font-size: .56rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--hk-muted);
+}
+.hk-date {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--hk-pink);
+    line-height: 1;
+    margin-bottom: 3px;
+}
+.hk-day.today .hk-date { color: var(--hk-red); }
+
+/* Événement */
+.hk-event {
+    background: var(--hk-white);
+    border: 1.5px solid var(--hk-pink-soft);
+    border-radius: 10px;
+    padding: .3rem .4rem;
+    cursor: pointer;
+    transition: all .12s;
+}
+.hk-event:hover { background: var(--hk-pink); border-color: var(--hk-pink); }
+.hk-event:hover .hk-ev-label { color: white; }
+.hk-ev-label {
+    font-size: .55rem;
+    line-height: 1.35;
+    color: var(--hk-ink);
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+}
+.hk-ev-icon { font-size: .6rem; flex-shrink: 0; }
+.hk-ev-photo {
+    margin-top: 3px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.hk-ev-photo img {
+    width: 100%; height: auto;
+    display: block;
+    border-radius: 8px;
+    max-height: 90px;
+    object-fit: contain;
+}
+
+/* Petits pieds sous chaque case */
+.hk-feet {
+    display: flex; gap: 8px;
+    justify-content: center;
+    padding: 3px 0 0;
+    font-size: .75rem;
+}
+
+/* ── MODAL KITTY ── */
+.hk-modal-inner {
+    background: var(--hk-white);
+    border: 3px solid var(--hk-pink);
+    border-radius: 24px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 20px 60px rgba(255,133,161,.3);
+    overflow: hidden;
+}
+.hk-modal-header {
+    background: var(--hk-pink-soft);
+    padding: .8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--hk-pink);
+}
+
+@media print {
+    @page { size: A4 landscape; margin: .8cm; }
+    nav, .no-print { display: none !important; }
+    body { background: white !important; }
+    .hk-week { break-inside: avoid; box-shadow: none; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main">
+
+    {# Header #}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;" class="no-print">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;color:var(--hk-pink,#FF85A1);">
+            🎀 Calendrier de <em style="font-style:italic;">{{ child.firstName }}</em>
+        </h1>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+            {% for c in children %}
+            <a href="{{ path('app_train', {'childId': c.id}) }}"
+               style="display:flex;align-items:center;gap:.5rem;padding:.4rem .85rem;
+                      border-radius:100px;border:2px solid {% if c.id == child.id %}#FF85A1{% else %}#FFD6E0{% endif %};
+                      background:{% if c.id == child.id %}rgba(255,133,161,.1){% else %}white{% endif %};
+                      text-decoration:none;color:#3D2B3D;font-size:.82rem;font-weight:500;">
+                {% if c.avatarPath %}
+                <img src="/uploads/events/{{ c.avatarPath }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+                {% else %}
+                <span>🎀</span>
+                {% endif %}
+                {{ c.firstName }}
+            </a>
+            {% endfor %}
+            <a href="{{ path('app_note_index', {'childId': child.id}) }}" class="btn btn-ghost btn-sm">💌 Notes</a>
+            <a href="{{ path('app_event_new', {'childId': child.id}) }}"
+               style="padding:.4rem 1rem;border-radius:100px;background:#FF85A1;color:white;
+                      text-decoration:none;font-size:.82rem;font-weight:600;border:none;">
+                ＋ Événement
+            </a>
+        </div>
+    </div>
+
+    {% set joursFR = {'Mon':'Lun','Tue':'Mar','Wed':'Mer','Thu':'Jeu','Fri':'Ven','Sat':'Sam','Sun':'Dim'} %}
+    {% set today   = 'now'|date('Y-m-d') %}
+
+    {% for weekOffset in 0..11 %}
+        {% set wStart = 'monday this week'|date_modify('+' ~ weekOffset ~ ' weeks') %}
+        {% set wEnd   = wStart|date_modify('+6 days') %}
+
+        {% if wEnd|date('Y-m') >= 'now'|date('Y-m') or weekOffset == 0 %}
+        <div class="hk-week" id="week-{{ weekOffset }}">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;" class="no-print">
+                <div style="font-family:'Fraunces',serif;font-size:.9rem;color:#B08090;">
+                    🌸 Semaine {{ wStart|date('W') }} · du {{ wStart|date('d') }} au {{ wEnd|date('d') }} {{ wEnd|date('F Y') }}
+                </div>
+                <button onclick="printWeek({{ weekOffset }})"
+                        style="padding:.3rem .85rem;border-radius:100px;font-size:.72rem;
+                               border:2px solid #FFD6E0;background:white;cursor:pointer;color:#FF85A1;font-weight:600;">
+                    🖨️ Imprimer
+                </button>
+            </div>
+
+            <div class="hk-row">
+
+                {# Tête de Hello Kitty (locomotive) #}
+                <div class="kitty-head">
+                    <div class="kitty-outer">
+                        {# Oreilles #}
+                        <div class="kitty-ear left"></div>
+                        <div class="kitty-ear right"></div>
+                        {# Nœud sur l'oreille droite #}
+                        <div class="kitty-bow-ear">🎀</div>
+                        {# Visage #}
+                        <div class="kitty-face">
+                            {% if child.avatarPath %}
+                            <img src="/uploads/events/{{ child.avatarPath }}"
+                                 class="kitty-avatar"
+                                 onerror="this.style.display='none'">
+                            {% endif %}
+                            {# Moustaches #}
+                            <div class="kitty-whiskers">
+                                <span><i></i><i></i></span>
+                                <span><i></i><i></i></span>
+                            </div>
+                            {# Yeux + nez centrés #}
+                            <div class="kitty-features">
+                                <div class="kitty-eyes">
+                                    <div class="kitty-eye"></div>
+                                    <div class="kitty-eye"></div>
+                                </div>
+                                <div class="kitty-nose"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kitty-name">{{ child.firstName }}<br>S{{ wStart|date('W') }}</div>
+                </div>
+
+                {% for d in 0..6 %}
+                    {% set day     = wStart|date_modify('+' ~ d ~ ' days') %}
+                    {% set dayKey  = day|date('Y-m-d') %}
+                    {% set isToday = dayKey == today %}
+                    {% set dayEvts = weekByDay[weekOffset] is defined and weekByDay[weekOffset][dayKey] is defined
+                                     ? weekByDay[weekOffset][dayKey] : [] %}
+
+                    <div class="hk-day {% if isToday %}today{% endif %}">
+                        <div class="hk-card">
+                            <div class="hk-dayname">{{ joursFR[day|date('D')]|default(day|date('D')) }}{% if isToday %} ✦{% endif %}</div>
+                            <div class="hk-date">{{ day|date('d') }}</div>
+
+                            {% for e in dayEvts %}
+                            {% if e.id %}
+                            <div class="hk-event"
+                                 onclick="openModal(
+                                     {{ e.id }},
+                                     '{{ e.title|e('html_attr') }}',
+                                     '{{ e.type }}',
+                                     '{{ e.startAt|date('d/m/Y') }}',
+                                     {% if e.endAt %}'{{ e.endAt|date('d/m/Y') }}'{% else %}null{% endif %},
+                                     {{ child.id }},
+                                     '{{ e.description ? e.description|e('html_attr') : '' }}',
+                                     {% if e.image %}'{{ '/uploads/events/' ~ e.image.filePath }}'{% else %}null{% endif %}
+                                 )">
+                                <div class="hk-ev-label">
+                                    <span class="hk-ev-icon">{% if e.type=='garde' %}🏠{% elseif e.type=='activite' %}🎡{% elseif e.type=='medical' %}🏥{% elseif e.type=='vacances' %}🌈{% else %}🎀{% endif %}</span>
+                                    <span>{{ e.title|slice(0,18) }}{% if e.title|length > 18 %}…{% endif %}</span>
+                                </div>
+                                {% if e.image %}
+                                <div class="hk-ev-photo">
+                                    <img src="/uploads/events/{{ e.image.filePath }}"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div style="background:rgba(255,133,161,.1);border-radius:10px;padding:.3rem .4rem;
+                                        border:1px dashed #FFB3C6;">
+                                <div style="font-size:.54rem;color:#B08090;display:flex;align-items:center;gap:2px;">
+                                    <span>🔒</span><span>Occupé</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="hk-feet">🐾🐾</div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    {# Légende #}
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:.9rem 1.2rem;
+                background:white;border-radius:14px;border:2px solid #FFD6E0;" class="no-print">
+        <span style="font-size:.75rem;color:#B08090;">🏠 Garde · 🎡 Activité · 🏥 Médical · 🌈 Vacances · 🎀 Autre</span>
+        <span style="font-size:.75rem;color:#B08090;display:flex;align-items:center;gap:.3rem;">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:3px;border:2px solid #E8355A;"></span> Aujourd'hui
+        </span>
+    </div>
+</div>
+
+{# Modal Hello Kitty #}
+<div id="ev-modal" onclick="if(event.target===this)closeModal()"
+     style="display:none;position:fixed;inset:0;z-index:200;
+            background:rgba(255,133,161,.25);backdrop-filter:blur(6px);
+            align-items:center;justify-content:center;padding:1rem;" class="no-print">
+    <div class="hk-modal-inner" onclick="event.stopPropagation()">
+        <div class="hk-modal-header">
+            <span style="font-size:1.1rem;">🎀</span>
+            <div id="modal-type" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#B08090;"></div>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#B08090;">✕</button>
+        </div>
+        <div id="modal-content" style="padding:1.2rem 1.5rem .5rem;"></div>
+        <div style="padding:.5rem 1.5rem 1.2rem;display:flex;gap:.5rem;justify-content:flex-end;">
+            <button onclick="deleteEvent()"
+                    style="padding:.4rem .9rem;border-radius:100px;border:2px solid #FFD6E0;
+                           background:white;color:#E8355A;cursor:pointer;font-size:.8rem;font-weight:500;">
+                🗑️ Supprimer
+            </button>
+            <a id="modal-edit" href="#"
+               style="padding:.4rem .9rem;border-radius:100px;background:#FF85A1;color:white;
+                      text-decoration:none;font-size:.8rem;font-weight:600;">
+                ✏️ Modifier
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const typeLabels = {garde:'🏠 Garde', activite:'🎡 Activité', medical:'🏥 Médical', vacances:'🌈 Vacances', autre:'🎀 Autre'};
+let currentEventData = null;
+
+function openModal(id, title, type, start, end, childId, description, imageUrl) {
+    currentEventData = { id, childId };
+    const date = end && end !== start ? `Du ${start} au ${end}` : start;
+    document.getElementById('modal-type').textContent = (typeLabels[type]||type);
+    document.getElementById('modal-content').innerHTML = `
+        <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:400;color:#3D2B3D;margin-bottom:.5rem;">${title}</h2>
+        <div style="font-size:.88rem;color:#B08090;margin-bottom:${(description||imageUrl)?'.8rem':'0'};">📅 ${date}</div>
+        ${description ? `<p style="font-size:.87rem;color:#3D2B3D;line-height:1.5;margin-bottom:${imageUrl?'.7rem':'0'};">${description}</p>` : ''}
+        ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;border:2px solid #FFD6E0;"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;"></div>` : ''}
+    `;
+    document.getElementById('modal-edit').href = `/children/${childId}/events/${id}/edit`;
+    document.getElementById('ev-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('ev-modal').style.display = 'none';
+    currentEventData = null;
+}
+
+function deleteEvent() {
+    if (!currentEventData) return;
+    if (!confirm('Supprimer cet événement ? 🌸')) return;
+    fetch(`/children/${currentEventData.childId}/events/${currentEventData.id}/delete`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(d => { if (d.success) window.location.reload(); });
+}
+
+function printWeek(i) {
+    document.querySelectorAll('.hk-week').forEach((el, j) => el.style.display = j === i ? '' : 'none');
+    window.print();
+    document.querySelectorAll('.hk-week').forEach(el => el.style.display = '');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+{% endblock %}

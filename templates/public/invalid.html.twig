@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+{% block title %}Lien invalide — Grooty{% endblock %}
+{% block body %}
+<div class="main" style="max-width:500px;text-align:center;padding-top:4rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🔗</div>
+    <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;margin-bottom:.8rem;">Lien invalide ou expiré</h1>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:2rem;">Ce lien de partage n'existe plus. Demandez un nouveau lien à la personne qui vous l'a envoyé.</p>
+    <a href="{{ path('app_login') }}" class="btn btn-primary">Se connecter</a>
+</div>
+{% endblock %}

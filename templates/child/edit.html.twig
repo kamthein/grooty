@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier {{ child.firstName }} — Grooty{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:500px;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
+        <a href="{{ path('app_child_index') }}" class="btn btn-ghost btn-sm">← Retour</a>
+        <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;">
+            Modifier le profil de <em style="font-style:italic;color:var(--terracotta)">{{ child.firstName }}</em>
+        </h1>
+    </div>
+    <div class="card">
+        {{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
+
+            <div class="form-group">
+                {{ form_label(form.firstName, null, {'label_attr':{'class':'form-label'}}) }}
+                {{ form_widget(form.firstName, {'attr':{'class':'form-control','autofocus':true}}) }}
+                {{ form_errors(form.firstName) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(form.birthDate, null, {'label_attr':{'class':'form-label'}}) }}
+                {{ form_widget(form.birthDate, {'attr':{'class':'form-control'}}) }}
+            </div>
+
+            {# Thème #}
+            <div class="form-group">
+                <label class="form-label">Thème du calendrier</label>
+                <div style="display:flex;gap:.8rem;">
+                    {% for choice in form.theme %}
+                    <label style="display:flex;align-items:center;gap:.6rem;padding:.7rem 1.1rem;
+                                  border-radius:14px;border:2px solid var(--sand);background:var(--white);
+                                  cursor:pointer;font-size:.88rem;font-weight:500;transition:all .15s;flex:1;
+                                  justify-content:center;" class="theme-label">
+                        {{ form_widget(choice, {'attr':{'style':'display:none'}}) }}
+                        {{ choice.vars.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Avatar #}
+            <div class="form-group">
+                <label class="form-label">Photo (optionnel)</label>
+                <label for="{{ form.avatarFile.vars.id }}"
+                       style="display:flex;align-items:center;gap:.8rem;padding:.75rem 1rem;
+                              border:1.5px dashed var(--sand);border-radius:12px;cursor:pointer;
+                              background:var(--warm);transition:all .15s;"
+                       onmouseover="this.style.borderColor='var(--forest)'"
+                       onmouseout="this.style.borderColor='var(--sand)'">
+                    <span style="font-size:1.3rem;">📷</span>
+                    <span id="avatar-label" style="font-size:.85rem;color:var(--muted);">Choisir une photo…</span>
+                </label>
+                {{ form_widget(form.avatarFile, {'attr':{'style':'display:none','onchange':'updateLabel(this)'}}) }}
+                {{ form_errors(form.avatarFile) }}
+            </div>
+
+            <div style="display:flex;gap:.8rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--sand);">
+                <a href="{{ path('app_child_index') }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+
+        {{ form_end(form, {'render_rest': false}) }}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+// Style des radios thème
+document.querySelectorAll('.theme-label').forEach(label => {
+    const input = label.querySelector('input');
+    if (input.checked) {
+        label.style.borderColor = 'var(--forest)';
+        label.style.background  = 'rgba(61,90,71,.06)';
+    }
+    input.addEventListener('change', () => {
+        document.querySelectorAll('.theme-label').forEach(l => {
+            l.style.borderColor = 'var(--sand)';
+            l.style.background  = 'var(--white)';
+        });
+        label.style.borderColor = 'var(--forest)';
+        label.style.background  = 'rgba(61,90,71,.06)';
+    });
+});
+
+function updateLabel(input) {
+    const label = document.getElementById('avatar-label');
+    label.textContent = input.files[0] ? input.files[0].name : 'Choisir une photo…';
+    label.style.color = input.files[0] ? 'var(--ink)' : 'var(--muted)';
+}
+</script>
+{% endblock %}

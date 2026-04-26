@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% block title %}Inviter un gardien — {{ child.firstName }} — Grooty{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:500px;">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
+        <a href="{{ path('app_child_show', {'id': child.id}) }}" class="btn btn-ghost btn-sm">← Retour</a>
+        <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;">
+            Inviter un <em style="font-style:italic;color:var(--terracotta)">gardien</em>
+            <span style="color:var(--muted);font-size:1rem;"> — {{ child.firstName }}</span>
+        </h1>
+    </div>
+    <div class="card">
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:1.2rem;">
+            Un email d'invitation sera envoyé. La personne pourra créer un compte ou se connecter pour accéder au calendrier de {{ child.firstName }}.
+        </p>
+        {{ form_start(form) }}
+            <div class="form-group">
+                {{ form_label(form.email, null, {'label_attr':{'class':'form-label'}}) }}
+                {{ form_widget(form.email, {'attr':{'class':'form-control','autofocus':true}}) }}
+                {{ form_errors(form.email) }}
+            </div>
+            <div class="form-group">
+                {{ form_label(form.role, null, {'label_attr':{'class':'form-label'}}) }}
+                {{ form_widget(form.role, {'attr':{'class':'form-control'}}) }}
+            </div>
+            <div class="form-group">
+                {{ form_label(form.permission, null, {'label_attr':{'class':'form-label'}}) }}
+                {{ form_widget(form.permission, {'attr':{'class':'form-control'}}) }}
+            </div>
+            <div style="display:flex;gap:.8rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--sand);">
+                <a href="{{ path('app_child_show', {'id': child.id}) }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">📨 Envoyer l'invitation</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}
