@@ -1,0 +1,13 @@
+# ── GROOTY — .htaccess RACINE ──
+# Redirige tout vers public/ (le seul dossier accessible)
+
+Options -Indexes
+
+# Forcer HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Rediriger vers public/
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
