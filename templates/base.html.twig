@@ -28,7 +28,13 @@
             font-family: 'DM Sans', sans-serif;
             background: var(--cream);
             color: var(--ink);
-            padding-bottom: env(safe-area-inset-bottom);
+            /* iOS Safari — éviter que le contenu passe sous la bottom nav */
+            padding-bottom: 0;
+        }
+
+        @supports (-webkit-touch-callout: none) {
+            /* iOS uniquement */
+            body { padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom)); }
         }
 
         /* ── NAVBAR DESKTOP ── */
@@ -58,13 +64,20 @@
         /* ── BOTTOM NAV MOBILE ── */
         .bottom-nav {
             display: none;
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1000;
             background: var(--white);
             border-top: 1px solid var(--sand);
             padding-bottom: env(safe-area-inset-bottom);
+            /* iOS Safari fix */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
         .bottom-nav-inner {
-            display: flex; align-items: center; justify-content: space-around;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
             height: var(--bottom-h);
             padding: 0 .5rem;
         }
