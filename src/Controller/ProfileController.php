@@ -45,18 +45,30 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/delete', name: 'app_profile_delete', methods: ['POST'])]
-    public function delete(Request $request, EntityManagerInterface $em, Security $security): Response
+    public function delete(Request $request, EntityManagerInterface $em, Security $security, \App\Repository\ChildGuardianRepository $cgRepo): Response
     {
-        if (!$this->isCsrfTokenValid('delete_profile', $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException();
+        $guardian = $this->getUser();
+
+        // Supprimer les enfants dont ce guardian est le seul admin
+        foreach ($cgRepo->findByGuardian($guardian) as $cg) {
+            if ($cg->isAdmin()) {
+                $child = $cg->getChild();
+                // Vérifier si d'autres admins existent
+                $otherAdmins = array_filter(
+                    $child->getChildGuardians()->toArray(),
+                    fn($c) => $c->getId() !== $cg->getId() && $c->isAdmin()
+                );
+                if (empty($otherAdmins)) {
+                    // Seul admin → supprimer l'enfant et tout ce qui y est lié
+                    $em->remove($child);
+                }
+            }
         }
 
-        $guardian = $this->getUser();
         $security->logout(false);
         $em->remove($guardian);
         $em->flush();
 
-        $this->addFlash('success', 'Votre compte a été supprimé.');
         return $this->redirectToRoute('app_login');
     }
 }
