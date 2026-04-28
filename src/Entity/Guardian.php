@@ -36,6 +36,9 @@ class Guardian implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(type: 'integer')]
+    private int $onboardingStep = 0;
+
     #[ORM\OneToMany(mappedBy: 'guardian', targetEntity: ChildGuardian::class, cascade: ['persist', 'remove'])]
     private Collection $childGuardians;
 
@@ -63,6 +66,8 @@ class Guardian implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static { $this->password = $password; return $this; }
     public function eraseCredentials(): void {}
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
+    public function getOnboardingStep(): int { return $this->onboardingStep; }
+    public function setOnboardingStep(int $step): static { $this->onboardingStep = $step; return $this; }
     public function getChildGuardians(): Collection { return $this->childGuardians; }
     public function getNotes(): Collection { return $this->notes; }
     public function getFullName(): string { return trim(($this->firstName ?? '') . ' ' . ($this->lastName ?? '')); }

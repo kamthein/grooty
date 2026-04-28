@@ -1,0 +1,179 @@
+{% extends 'base.html.twig' %}
+{% block title %}Analytics — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--white); border: 1px solid var(--sand); border-radius: 14px; padding: 1.2rem; text-align: center; }
+.stat-num  { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; color: var(--forest); }
+.stat-num.danger { color: var(--terracotta); }
+.stat-label { font-size: .75rem; color: var(--muted); margin-top: .3rem; text-transform: uppercase; letter-spacing: .05em; }
+.section { background: var(--white); border: 1px solid var(--sand); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.section h2 { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 400; margin-bottom: 1rem; }
+.row { display: flex; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px solid var(--warm); font-size: .85rem; }
+.row:last-child { border-bottom: none; }
+.row-count { font-weight: 700; color: var(--forest); min-width: 40px; text-align: right; }
+.row-count.danger { color: var(--terracotta); }
+.bar { height: 6px; background: var(--forest); border-radius: 3px; opacity: .3; }
+.export-box { background: var(--ink); color: #88FF88; border-radius: 12px; padding: 1rem; font-family: monospace; font-size: .7rem; overflow-x: auto; max-height: 300px; overflow-y: auto; white-space: pre; }
+.period-btns { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:900px;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
+            📊 Analytics <em style="font-style:italic;color:var(--terracotta)">Grooty</em>
+        </h1>
+        <div class="period-btns">
+            {% for d in [1, 7, 30] %}
+            <a href="?days={{ d }}" class="btn {% if days == d %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">
+                {{ d == 1 ? '24h' : d ~ 'j' }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Stats globales #}
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-num">{{ stats.page_views ?? 0 }}</div>
+            <div class="stat-label">Pages vues</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">{{ stats.sessions ?? 0 }}</div>
+            <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">{{ stats.users ?? 0 }}</div>
+            <div class="stat-label">Utilisateurs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num danger">{{ stats.rage_clicks ?? 0 }}</div>
+            <div class="stat-label">Rage clicks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num danger">{{ stats.dead_clicks ?? 0 }}</div>
+            <div class="stat-label">Dead clicks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num danger">{{ stats.js_errors ?? 0 }}</div>
+            <div class="stat-label">Erreurs JS</div>
+        </div>
+    </div>
+
+    {# Pages les plus visitées #}
+    {% if topPages %}
+    <div class="section">
+        <h2>📄 Pages les plus visitées</h2>
+        {% set maxViews = maxViews %}
+        {% for p in topPages %}
+        <div class="row">
+            <div style="flex:1;color:var(--muted);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.page }}</div>
+            <div style="width:100px;"><div class="bar" style="width:{{ (p.views / maxViews * 100)|round }}%;opacity:.5;"></div></div>
+            <div class="row-count">{{ p.views }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Rage clicks #}
+    {% if rageClicks %}
+    <div class="section">
+        <h2>😤 Rage clicks — zones frustrantes</h2>
+        {% for r in rageClicks %}
+        <div class="row">
+            <div style="flex:1;">
+                <div style="font-size:.82rem;font-weight:500;">{{ r.target ?? 'inconnu' }}</div>
+                <div style="font-size:.72rem;color:var(--muted);">{{ r.page }}</div>
+            </div>
+            <div class="row-count danger">{{ r.count }}×</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Dead clicks #}
+    {% if deadClicks %}
+    <div class="section">
+        <h2>👻 Dead clicks — clics sans effet</h2>
+        {% for d in deadClicks %}
+        <div class="row">
+            <div style="flex:1;">
+                <div style="font-size:.82rem;font-weight:500;">{{ d.target ?? 'inconnu' }}</div>
+                <div style="font-size:.72rem;color:var(--muted);">{{ d.page }}</div>
+            </div>
+            <div class="row-count danger">{{ d.count }}×</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Erreurs JS #}
+    {% if jsErrors %}
+    <div class="section">
+        <h2>🐛 Erreurs JavaScript</h2>
+        {% for e in jsErrors %}
+        <div class="row">
+            <div style="flex:1;font-size:.8rem;font-family:monospace;color:var(--terracotta);">{{ e.message }}</div>
+            <div class="row-count danger">{{ e.count }}×</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Funnel onboarding #}
+    {% if funnel %}
+    <div class="section">
+        <h2>🚀 Funnel onboarding</h2>
+        {% for f in funnel %}
+        <div class="row">
+            <div style="flex:1;font-size:.85rem;">{{ f.step }}</div>
+            <div class="row-count">{{ f.count }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Actions clés #}
+    {% if actions %}
+    <div class="section">
+        <h2>⚡ Actions clés</h2>
+        {% for a in actions %}
+        <div class="row">
+            <div style="flex:1;font-size:.85rem;">{{ a.action }}</div>
+            <div class="row-count">{{ a.count }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Export JSON pour analyse IA #}
+    <div class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <h2 style="margin:0;">🤖 Export pour analyse IA</h2>
+            <button onclick="copyExport()" class="btn btn-ghost btn-sm">📋 Copier</button>
+        </div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:.8rem;">
+            Copie ce JSON et colle-le à Claude pour obtenir des recommandations d'amélioration.
+        </p>
+        <div class="export-box" id="export-json">{{ exportJson }}</div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function copyExport() {
+    const text = document.getElementById('export-json').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = '✓ Copié !';
+        setTimeout(() => btn.textContent = '📋 Copier', 2000);
+    });
+}
+</script>
+{% endblock %}

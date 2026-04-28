@@ -189,6 +189,9 @@
     <div class="navbar-nav">
         <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
         <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
+        {% if app.user.email == 'lesaichot.camille@gmail.com' %}
+        <a href="{{ path('admin_analytics') }}" class="nav-link {% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">📊</a>
+        {% endif %}
     </div>
     <div class="nav-user">
         <a href="{{ path('app_profile') }}">{{ app.user.firstName }}</a>
@@ -235,7 +238,119 @@
 
 {% if app.user %}
 <script>
-// ── SERVICE WORKER + PUSH ──
+// ── GROOTY ANALYTICS TRACKER ──
+const _GA = {
+    session: localStorage.getItem('_ga_sid') || (() => {
+        const s = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('_ga_sid', s);
+        return s;
+    })(),
+    queue:   [],
+    clicks:  {},  // pour rage click detection
+
+    push(type, data = {}) {
+        this.queue.push({
+            type,
+            page:   window.location.pathname,
+            data,
+            ts:     Date.now(),
+        });
+    },
+
+    flush() {
+        if (!this.queue.length) return;
+        const events = this.queue.splice(0);
+        fetch('/analytics/track', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ sessionId: this.session, events }),
+            keepalive: true,
+        }).catch(() => {});
+    },
+
+    init() {
+        // Page view
+        this.push('page_view');
+
+        // Clic tracking
+        document.addEventListener('click', e => {
+            const el  = e.target;
+            const tag = el.tagName.toLowerCase();
+            const key = el.className + el.textContent?.slice(0, 30);
+
+            // Rage click : 3 clics en 2s sur le même élément
+            const now = Date.now();
+            if (!this.clicks[key]) this.clicks[key] = [];
+            this.clicks[key] = this.clicks[key].filter(t => now - t < 2000);
+            this.clicks[key].push(now);
+
+            if (this.clicks[key].length >= 3) {
+                this.push('rage_click', {
+                    target: this.describeEl(el),
+                    x: e.clientX, y: e.clientY,
+                });
+                this.clicks[key] = [];
+                return;
+            }
+
+            // Dead click : clic sur zone non interactive
+            const interactive = ['a','button','input','select','textarea','label'];
+            const isInteractive = interactive.includes(tag)
+                || el.closest('a,button,[onclick],[role=button]');
+
+            if (!isInteractive && e.target !== document.body) {
+                this.push('dead_click', {
+                    target: this.describeEl(el),
+                    x: e.clientX, y: e.clientY,
+                });
+            }
+        }, true);
+
+        // Erreurs JS
+        window.addEventListener('error', e => {
+            this.push('js_error', {
+                message: e.message?.slice(0, 200),
+                file:    e.filename?.replace(window.location.origin, ''),
+                line:    e.lineno,
+            });
+        });
+
+        // Flush toutes les 30s et au départ de la page
+        setInterval(() => this.flush(), 30000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') this.flush();
+        });
+        window.addEventListener('beforeunload', () => this.flush());
+    },
+
+    describeEl(el) {
+        const id   = el.id ? `#${el.id}` : '';
+        const cls  = el.className && typeof el.className === 'string'
+                     ? '.' + el.className.trim().split(/\s+/).slice(0,2).join('.')
+                     : '';
+        const text = el.textContent?.trim().slice(0, 30);
+        return `${el.tagName.toLowerCase()}${id}${cls}${text ? ` "${text}"` : ''}`.slice(0, 200);
+    },
+
+    // Tracker une action clé
+    action(name, data = {}) {
+        this.push('action', { action: name, ...data });
+    },
+
+    // Tracker une étape funnel
+    funnel(step) {
+        this.push('funnel', { step });
+        fetch('/onboarding/step/' + step, { method: 'POST' }).catch(() => {});
+    },
+};
+
+_GA.init();
+window._GA = _GA; // accessible globalement
+</script>
+{% endif %}
+
+{% if app.user %}
+<script>
 if ('serviceWorker' in navigator && 'PushManager' in window) {
     navigator.serviceWorker.register('/sw.js').then(reg => {
         // Vérifier si déjà abonné
@@ -313,8 +428,10 @@ function urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 </script>
+{% endif %}
 
 {# Bannière douce d'invitation aux notifications #}
+{% if app.user %}
 <div id="push-banner"
      style="display:none;position:fixed;bottom:calc(var(--bottom-h,0px) + env(safe-area-inset-bottom) + 12px);
             left:12px;right:12px;z-index:150;
@@ -341,4 +458,5 @@ function urlBase64ToUint8Array(base64String) {
     </div>
 </div>
 {% endif %}
+</body>
 </html>
