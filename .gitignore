@@ -1,4 +1,5 @@
 /.env.local
+/.env.local.prod
 /.env.dev
 /.env.local.php
 /.env.*.local
