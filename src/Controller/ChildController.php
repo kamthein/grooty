@@ -180,48 +180,6 @@ class ChildController extends AbstractController
         return $this->render('child/invite.html.twig', ['form' => $form, 'child' => $child]);
     }
 
-    #[Route('/invite/accept/{token}', name: 'app_invite_accept')]
-    public function acceptInvite(string $token, \App\Repository\ChildGuardianRepository $cgRepo, EntityManagerInterface $em, \Symfony\Component\HttpFoundation\RequestStack $requestStack): Response
-    {
-        $cg = $cgRepo->findOneBy(['inviteToken' => $token]);
-
-        if (!$cg) {
-            $this->addFlash('error', "Lien d'invitation invalide ou expiré.");
-            return $this->redirectToRoute('app_login');
-        }
-
-        // Si pas connecté → sauvegarder le token en session et rediriger
-        $user = $this->getUser();
-        if (!$user) {
-            $requestStack->getSession()->set('pending_invite_token', $token);
-            $this->addFlash('info', "Connectez-vous ou créez un compte pour rejoindre le calendrier de {$cg->getChild()->getFirstName()}.");
-            return $this->redirectToRoute('app_register');
-        }
-
-        if ($cg->isInviteAccepted()) {
-            $this->addFlash('info', "Vous avez déjà accepté cette invitation.");
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        // Vérifier que l'email correspond
-        if ($cg->getInviteEmail() && $cg->getInviteEmail() !== $user->getEmail()) {
-            $this->addFlash('error', "Ce lien est destiné à {$cg->getInviteEmail()}.");
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        if (!$cg->getGuardian()) {
-            $cg->setGuardian($user);
-        }
-
-        $cg->setInviteAccepted(true);
-        $cg->setInviteToken(null);
-        $cg->setInviteEmail(null);
-        $em->flush();
-
-        $this->addFlash('success', "Vous avez rejoint le calendrier de {$cg->getChild()->getFirstName()} !");
-        return $this->redirectToRoute('app_train', ['childId' => $cg->getChild()->getId()]);
-    }
-
     #[Route('/{id}/guardians/{cgId}/remove', name: 'app_guardian_remove', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function removeGuardian(Child $child, int $cgId, ChildGuardianRepository $cgRepo, EntityManagerInterface $em): Response
     {
