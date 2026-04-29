@@ -499,14 +499,26 @@ const typeLabels = {garde:'🏠 Garde', activite:'🎡 Activité', medical:'🏥
 let currentEventData = null;
 
 function openModal(id, title, type, start, end, childId, description, imageUrl) {
-    currentEventData = { id, childId };
+    currentEventData = { id, childId, title, type, start, end, description };
     const date = end && end !== start ? `Du ${start} au ${end}` : start;
-    document.getElementById('modal-type').textContent = (typeLabels[type]||type);
     document.getElementById('modal-content').innerHTML = `
-        <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:400;color:#3D2B3D;margin-bottom:.5rem;">${title}</h2>
-        <div style="font-size:.88rem;color:#B08090;margin-bottom:${(description||imageUrl)?'.8rem':'0'};">📅 ${date}</div>
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#B08090;margin-bottom:.4rem;">${typeLabels[type]||type}</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;margin-bottom:.6rem;color:#3D2B3D;">${title}</h2>
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:${(description||imageUrl)?'.8rem':'0'};">
+            <span style="font-size:.84rem;color:#B08090;">📅 ${date}</span>
+            <button onclick="addToGoogleCalendar()" title="Ajouter à Google Agenda"
+                    style="padding:.2rem .6rem;border-radius:100px;border:1.5px solid #FFD6E0;
+                           background:white;color:#B08090;cursor:pointer;font-size:.72rem;white-space:nowrap;">
+                🗓️ Google
+            </button>
+            <button onclick="downloadIcal()" title="Télécharger .ics"
+                    style="padding:.2rem .6rem;border-radius:100px;border:1.5px solid #FFD6E0;
+                           background:white;color:#B08090;cursor:pointer;font-size:.72rem;white-space:nowrap;">
+                📅 iCal
+            </button>
+        </div>
         ${description ? `<p style="font-size:.87rem;color:#3D2B3D;line-height:1.5;margin-bottom:${imageUrl?'.7rem':'0'};">${description}</p>` : ''}
-        ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;border:2px solid #FFD6E0;"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;"></div>` : ''}
+        ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;border:2px solid #FFD6E0;cursor:zoom-in;" onclick="openLightbox('${imageUrl}')"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;"></div>` : ''}
     `;
     document.getElementById('modal-edit').href = `/children/${childId}/events/${id}/edit`;
     document.getElementById('ev-modal').style.display = 'flex';
@@ -532,6 +544,38 @@ function printWeek(i) {
     document.querySelectorAll('.hk-week').forEach((el, j) => el.style.display = j === i ? '' : 'none');
     window.print();
     document.querySelectorAll('.hk-week').forEach(el => el.style.display = '');
+}
+
+function toIcalDate(str) {
+    if (!str) return null;
+    const [d, m, y] = str.split('/');
+    return `${y}${m}${d}`;
+}
+
+function addToGoogleCalendar() {
+    if (!currentEventData) return;
+    const { title, start, end, description } = currentEventData;
+    const dtStart = toIcalDate(start);
+    const dtEnd   = end && end !== start ? toIcalDate(end) : dtStart;
+    const params  = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${dtStart}/${dtEnd}`, details: description || '' });
+    window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
+}
+
+function downloadIcal() {
+    if (!currentEventData) return;
+    const { title, start, end, description } = currentEventData;
+    const dtStart = toIcalDate(start);
+    const dtEnd   = end && end !== start ? toIcalDate(end) : dtStart;
+    const now     = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Grooty//FR','CALSCALE:GREGORIAN',
+        'BEGIN:VEVENT',`UID:event-${currentEventData.id}@grooty.fr`,`DTSTAMP:${now}`,
+        `DTSTART;VALUE=DATE:${dtStart}`,`DTEND;VALUE=DATE:${dtEnd}`,`SUMMARY:${title}`,
+        description ? `DESCRIPTION:${description.replace(/\n/g,'\\n')}` : '',
+        'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'}));
+    a.download = `${title.replace(/\s+/g,'_')}.ics`;
+    a.click();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
