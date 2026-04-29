@@ -552,12 +552,34 @@ function toIcalDate(str) {
     return `${y}${m}${d}`;
 }
 
+function toIcalDateTime(str) {
+    if (!str) return null;
+    const parts = str.split(' ');
+    const [d, m, y] = parts[0].split('/');
+    if (parts[1]) { const [hh, mm] = parts[1].split(':'); return `${y}${m}${d}T${hh}${mm}00`; }
+    return `${y}${m}${d}`;
+}
+
+function addDayToIcal(str) {
+    if (!str) return null;
+    const y = parseInt(str.slice(0,4)), mo = parseInt(str.slice(4,6))-1, d = parseInt(str.slice(6,8));
+    const next = new Date(y, mo, d+1);
+    return `${next.getFullYear()}${String(next.getMonth()+1).padStart(2,'0')}${String(next.getDate()).padStart(2,'0')}`;
+}
+
 function addToGoogleCalendar() {
     if (!currentEventData) return;
     const { title, start, end, description } = currentEventData;
-    const dtStart = toIcalDate(start);
-    const dtEnd   = end && end !== start ? toIcalDate(end) : dtStart;
-    const params  = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${dtStart}/${dtEnd}`, details: description || '' });
+    const hasTime = start && start.includes(' ');
+    let dtStart, dtEnd;
+    if (hasTime) {
+        dtStart = toIcalDateTime(start);
+        dtEnd   = end && end !== start ? toIcalDateTime(end) : dtStart;
+    } else {
+        dtStart = toIcalDate(start);
+        dtEnd   = addDayToIcal(end && end !== start ? toIcalDate(end) : dtStart);
+    }
+    const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${dtStart}/${dtEnd}`, details: description || '' });
     window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
 }
 
