@@ -70,9 +70,12 @@
             background: var(--white);
             border-top: 1px solid var(--sand);
             padding-bottom: env(safe-area-inset-bottom);
-            /* iOS Safari fix */
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
+            /* iOS Safari fix — force GPU layer */
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
         }
         .bottom-nav-inner {
             display: flex;

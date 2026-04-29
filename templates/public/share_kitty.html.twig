@@ -109,7 +109,12 @@
         .hk-event { background: var(--hk-white); border: 1.5px solid var(--hk-pink-soft); border-radius: 10px; padding: .28rem .38rem; }
         .hk-label { font-size: .52rem; line-height: 1.35; color: var(--hk-ink); display: flex; align-items: flex-start; gap: 2px; }
         .hk-photo { margin-top: 3px; border-radius: 8px; overflow: hidden; }
-        .hk-photo img { width: 100%; height: auto; display: block; border-radius: 8px; max-height: 80px; object-fit: contain; }
+        .hk-photo img { width: 100%; height: auto; display: block; border-radius: 8px; max-height: 80px; object-fit: contain; cursor: zoom-in; }
+        /* Lightbox */
+        .lightbox { display:none; position:fixed; inset:0; z-index:300; background:rgba(61,43,61,.88); align-items:center; justify-content:center; padding:1rem; }
+        .lightbox.open { display:flex; }
+        .lightbox img { max-width:100%; max-height:90vh; border-radius:16px; object-fit:contain; box-shadow:0 24px 64px rgba(0,0,0,.5); border:3px solid #FFD6E0; }
+        .lightbox-close { position:fixed; top:1rem; right:1rem; background:rgba(255,133,161,.3); border:none; color:white; font-size:1.5rem; border-radius:50%; width:40px; height:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
         .hk-feet { display: flex; gap: 8px; justify-content: center; padding: 3px 0 0; font-size: .75rem; }
 
         /* ── CTA ── */
@@ -225,5 +230,22 @@
     </div>
 </div>
 
+{# Lightbox #}
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" onclick="event.stopPropagation()" alt="">
+</div>
+
+<script>
+document.querySelectorAll('.hk-photo img').forEach(img => {
+    img.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('lightbox-img').src = img.src;
+        document.getElementById('lightbox').classList.add('open');
+    });
+});
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
 </body>
 </html>
