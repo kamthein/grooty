@@ -152,29 +152,21 @@
         }
 
         /* ── MOBILE ── */
+        /* ── MOBILE : navbar compacte en haut ── */
         @media (max-width: 640px) {
-            /* Navbar : garder logo + user, cacher nav centrale */
-            .navbar-nav { display: none; }
-            .navbar { padding: 0 1rem; }
-            .nav-user .btn { display: none; } /* cacher déconnexion — dans bottom nav */
-
-            /* Afficher bottom nav */
-            .bottom-nav { display: block; }
-
-            /* Compenser la bottom nav */
-            body { padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom)); }
-
-            /* Main padding réduit */
+            .navbar { padding: 0 .8rem; height: 52px; }
+            .navbar-brand { font-size: 1.1rem; }
+            .navbar-nav { display: flex; gap: 0; }
+            .nav-link { padding: .3rem .55rem; font-size: .75rem; }
+            .nav-user .btn { display: none; }
+            .nav-user a:not(.mobile-only) { font-size: .75rem; }
+            .mobile-only { display: inline-flex !important; }
+            .bottom-nav { display: none !important; }
+            body { padding-bottom: 0; }
             .main { padding: 1rem; }
-
-            /* Cards */
             .card { padding: 1rem; border-radius: 14px; }
-
-            /* Flash */
             .flash-container { padding: 0 0.8rem; }
             .flash { font-size: 0.82rem; padding: 0.65rem 1rem; }
-
-            /* Boutons pleine largeur sur mobile si dans un form */
             .btn-full-mobile { width: 100%; justify-content: center; }
         }
 
@@ -197,8 +189,9 @@
         {% endif %}
     </div>
     <div class="nav-user">
-        <a href="{{ path('app_profile') }}">{{ app.user.firstName }}</a>
+        <a href="{{ path('app_profile') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none;">{{ app.user.firstName }}</a>
         <a href="{{ path('app_logout') }}" class="btn btn-ghost btn-sm">Déconnexion</a>
+        <a href="{{ path('app_logout') }}" class="nav-link mobile-only" style="display:none;">🚪</a>
     </div>
 </nav>
 
@@ -238,31 +231,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 {% block javascripts %}{% endblock %}
-
-{% if app.user %}
-<script>
-// ── CACHER LA BOTTOM NAV QUAND LE CLAVIER EST OUVERT (iOS) ──
-if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-    const nav = document.querySelector('.bottom-nav');
-    if (nav) {
-        // Détecter focus sur un champ de saisie
-        document.addEventListener('focusin', e => {
-            if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
-                nav.style.display = 'none';
-            }
-        });
-        // Réafficher quand le clavier se ferme
-        document.addEventListener('focusout', () => {
-            setTimeout(() => {
-                if (!document.activeElement || !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
-                    nav.style.display = 'block';
-                }
-            }, 100);
-        });
-    }
-}
-</script>
-{% endif %}
 
 {% if app.user %}
 <script>
