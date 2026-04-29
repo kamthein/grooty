@@ -28,7 +28,7 @@ class ChildGuardianRepository extends ServiceEntityRepository
     public function findByChild(Child $child): array
     {
         return $this->createQueryBuilder('cg')
-            ->join('cg.guardian', 'g')
+            ->leftJoin('cg.guardian', 'g')  // leftJoin pour inclure les invitations sans compte
             ->where('cg.child = :child')
             ->setParameter('child', $child)
             ->orderBy('cg.permission', 'DESC')

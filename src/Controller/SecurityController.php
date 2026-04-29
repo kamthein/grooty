@@ -58,12 +58,11 @@ class SecurityController extends AbstractController
             $security->login($guardian, 'form_login', 'main');
             $this->addFlash('success', 'Bienvenue sur Grooty !');
 
-            // Si des invitations en attente → rediriger vers la première
-            if (!empty($pendingInvites)) {
-                $token = $pendingInvites[0]->getInviteToken();
-                if ($token) {
-                    return $this->redirectToRoute('app_invite_accept', ['token' => $token]);
-                }
+            // Si invitation en attente en session
+            $pendingToken = $request->getSession()->get('pending_invite_token');
+            if ($pendingToken) {
+                $request->getSession()->remove('pending_invite_token');
+                return $this->redirectToRoute('app_invite_accept', ['token' => $pendingToken]);
             }
 
             return $this->redirectToRoute('app_child_new');

@@ -34,5 +34,6 @@ security:
         - { path: ^/login,            roles: PUBLIC_ACCESS }
         - { path: ^/register,         roles: PUBLIC_ACCESS }
         - { path: ^/share/,           roles: PUBLIC_ACCESS }
+        - { path: ^/invite/accept/,   roles: PUBLIC_ACCESS }
         - { path: ^/analytics/track,  roles: PUBLIC_ACCESS }
         - { path: ^/,                 roles: ROLE_USER }
