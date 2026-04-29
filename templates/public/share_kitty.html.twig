@@ -28,12 +28,16 @@
         /* ── HEADER ── */
         .share-header {
             background: var(--hk-pink);
-            padding: 1rem 1.5rem;
-            display: flex; align-items: center; justify-content: space-between;
+            padding: .75rem 1.2rem;
+            display: flex; align-items: center; gap: .8rem;
         }
-        .share-brand { font-family: 'Fraunces', serif; font-size: 1.2rem; color: white; }
-        .share-brand em { color: var(--hk-yellow); font-style: italic; }
-        .share-child { display: flex; align-items: center; gap: .6rem; color: white; font-size: .85rem; }
+        .share-avatar { width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35);flex-shrink:0; }
+        .share-avatar-placeholder { width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0; }
+        .share-header-info { flex:1;min-width:0; }
+        .share-header-name { font-family:'Fraunces',serif;font-size:1rem;color:white;font-weight:400; }
+        .share-header-sub { font-size:.72rem;color:rgba(255,255,255,.6);margin-top:1px; }
+        .share-header-brand { font-family:'Fraunces',serif;font-size:.85rem;color:rgba(255,255,255,.5);font-style:italic;flex-shrink:0; }
+        .share-cta-btn { padding:.4rem .9rem;border-radius:100px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;font-size:.78rem;font-weight:500;text-decoration:none;flex-shrink:0;white-space:nowrap; }
 
         .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 
@@ -129,14 +133,17 @@
 <body>
 
 <div class="share-header">
-    <div class="share-brand">Gr<em>oo</em>ty 🎀</div>
-    <div class="share-child">
-        {% if child.avatarPath %}
-        <img src="/uploads/events/{{ child.avatarPath }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3);" onerror="this.style.display='none'">
-        {% endif %}
-        Calendrier de <strong>{{ child.firstName }}</strong>
+    {% if child.avatarPath %}
+    <img src="/uploads/events/{{ child.avatarPath }}" class="share-avatar" onerror="this.style.display='none'">
+    {% else %}
+    <div class="share-avatar-placeholder">🎀</div>
+    {% endif %}
+    <div class="share-header-info">
+        <div class="share-header-name">{{ child.firstName }}</div>
+        <div class="share-header-sub">Calendrier partagé · lecture seule</div>
     </div>
-    <a href="/register" style="padding:.4rem .9rem;border-radius:100px;background:rgba(255,255,255,.2);color:white;text-decoration:none;font-size:.8rem;font-weight:500;border:1px solid rgba(255,255,255,.3);">Créer mon compte</a>
+    <div class="share-header-brand">Grooty</div>
+    <a href="/register" class="share-cta-btn">Rejoindre</a>
 </div>
 
 <div class="main">
