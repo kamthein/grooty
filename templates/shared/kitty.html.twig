@@ -579,7 +579,7 @@ function addToGoogleCalendar() {
         dtStart = toIcalDate(start);
         dtEnd   = addDayToIcal(end && end !== start ? toIcalDate(end) : dtStart);
     }
-    const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${dtStart}/${dtEnd}`, details: description || '' });
+    const params = new URLSearchParams({ action: 'TEMPLATE', text: `{{ child.firstName }} - ${title}`, dates: `${dtStart}/${dtEnd}`, details: description || '', color: '8' });
     window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
 }
 

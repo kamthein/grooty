@@ -599,9 +599,10 @@ function addToGoogleCalendar() {
 
     const params = new URLSearchParams({
         action:  'TEMPLATE',
-        text:    title,
+        text:    `{{ child.firstName }} - ${title}`,
         dates:   `${dtStart}/${dtEnd}`,
         details: description || '',
+        color:   '8',
     });
     window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
 }
