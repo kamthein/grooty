@@ -212,22 +212,15 @@ class NotificationService
         <body style='margin:0;padding:0;background:#FAF7F2;font-family:\"DM Sans\",Arial,sans-serif;'>
             <div style='max-width:560px;margin:2rem auto;background:white;border-radius:20px;
                         border:1px solid #E8DFD0;overflow:hidden;box-shadow:0 4px 20px rgba(28,28,26,.08);'>
-
-                {# Header #}
-                <div style='background:#3D5A47;padding:1.2rem 2rem;display:flex;align-items:center;gap:.5rem;'>
+                <div style='background:#3D5A47;padding:1.2rem 2rem;'>
                     <span style='font-family:Georgia,serif;font-size:1.4rem;color:white;'>
-                        Gr<em style='color:#FAD7A0;font-style:italic;'>oo</em>ty
+                        Gr<span style='color:#FAD7A0;font-style:italic;'>oo</span>ty
                     </span>
                 </div>
-
-                {# Content #}
                 <div style='padding:2rem;'>
                     {$content}
                 </div>
-
-                {# Footer #}
-                <div style='padding:1.2rem 2rem;background:#FAF7F2;border-top:1px solid #E8DFD0;
-                            text-align:center;'>
+                <div style='padding:1.2rem 2rem;background:#FAF7F2;border-top:1px solid #E8DFD0;text-align:center;'>
                     <p style='font-size:.75rem;color:#8A8578;margin:0;line-height:1.6;'>
                         Vous recevez cet email car vous êtes gardien sur Grooty.<br>
                         <a href='{$this->appBaseUrl}' style='color:#3D5A47;'>grooty.fr</a>
