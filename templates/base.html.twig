@@ -241,7 +241,28 @@
 
 {% if app.user %}
 <script>
-// ── GROOTY ANALYTICS TRACKER ──
+// ── CACHER LA BOTTOM NAV QUAND LE CLAVIER EST OUVERT (iOS) ──
+if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    const nav = document.querySelector('.bottom-nav');
+    if (nav) {
+        // Détecter focus sur un champ de saisie
+        document.addEventListener('focusin', e => {
+            if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+                nav.style.display = 'none';
+            }
+        });
+        // Réafficher quand le clavier se ferme
+        document.addEventListener('focusout', () => {
+            setTimeout(() => {
+                if (!document.activeElement || !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+                    nav.style.display = 'block';
+                }
+            }, 100);
+        });
+    }
+}
+</script>
+{% endif %}
 const _GA = {
     session: localStorage.getItem('_ga_sid') || (() => {
         const s = Math.random().toString(36).slice(2) + Date.now().toString(36);

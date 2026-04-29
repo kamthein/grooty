@@ -121,7 +121,6 @@ class AnalyticsController extends AbstractController
             SELECT target, page, COUNT(*) AS count
             FROM analytics_event
             WHERE event_type = 'dead_click' AND created_at >= ?
-              AND target IS NOT NULL
             GROUP BY target, page ORDER BY count DESC LIMIT 10
         ", [$since->format('Y-m-d H:i:s')]);
 

@@ -71,7 +71,7 @@
             {{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}
         </div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-            <button onclick="copyLink('{{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}')"
+            <button onclick="copyLink('{{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}', this)"
                     class="btn btn-primary btn-sm">📋 Copier le lien</button>
             <a href="{{ app.request.schemeAndHttpHost }}/share/{{ child.shareToken }}" target="_blank"
                class="btn btn-ghost btn-sm">👁️ Aperçu</a>
@@ -186,10 +186,14 @@
 
 {% block javascripts %}
 <script>
-function copyLink(url) {
+function copyLink(url, btn) {
     navigator.clipboard.writeText(url).then(() => {
-        event.target.textContent = '✓ Copié !';
-        setTimeout(() => event.target.textContent = '📋 Copier le lien', 2000);
+        const el = btn || event?.target;
+        if (el) {
+            const orig = el.textContent;
+            el.textContent = '✓ Copié !';
+            setTimeout(() => el.textContent = orig, 2000);
+        }
     });
 }
 </script>
