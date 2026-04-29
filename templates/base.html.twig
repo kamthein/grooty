@@ -263,6 +263,9 @@ if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
 }
 </script>
 {% endif %}
+
+{% if app.user %}
+<script>
 const _GA = {
     session: localStorage.getItem('_ga_sid') || (() => {
         const s = Math.random().toString(36).slice(2) + Date.now().toString(36);

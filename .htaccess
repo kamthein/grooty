@@ -1,13 +1,18 @@
-# ── GROOTY — .htaccess RACINE ──
-# Redirige tout vers public/ (le seul dossier accessible)
-
-Options -Indexes
-
-# Forcer HTTPS
 RewriteEngine On
-RewriteCond %{HTTPS} off
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Rediriger vers public/
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ public/$1 [L]
+# Redirection vers www
+RewriteCond %{HTTP_HOST} !^www\.grooty\.fr [NC]
+RewriteRule (.*) https://www.grooty.fr/$1 [QSA,R=301,L]
+
+# Redirection HTTPS
+RewriteCond %{HTTPS} !=on
+RewriteRule .* https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Supprimer /index.php/ des URLs
+RewriteCond %{REQUEST_URI} ^/index\.php/(.*)$
+RewriteRule ^ /%1 [R=301,L]
+
+# Symfony front controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.php?/$1 [L]
