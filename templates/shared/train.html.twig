@@ -460,7 +460,7 @@ body {
                                  )">
                                 <div class="ev-label">
                                     <span class="ev-icon">{% if e.type=='garde' %}🏠{% elseif e.type=='activite' %}🏃{% elseif e.type=='medical' %}🏥{% elseif e.type=='vacances' %}🌴{% else %}📌{% endif %}</span>
-                                    <span>{{ e.title|slice(0,18) }}{% if e.title|length > 18 %}…{% endif %}</span>
+                                    <span>{{ e.title|slice(0,18) }}{% if e.title|length > 18 %}…{% endif %}{% if e.isPending() %} ⏳{% endif %}</span>
                                 </div>
                                 {% if e.image %}
                                 <div class="ev-photo">

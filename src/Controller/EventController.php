@@ -143,7 +143,13 @@ class EventController extends AbstractController
 
             $this->em->persist($event);
             $this->em->flush();
-            return $this->redirectToRoute('app_event_index', ['childId' => $childId]);
+
+            // Rediriger vers la pop-up de notification/validation
+            return $this->redirectToRoute('app_event_notify', [
+                'childId'  => $childId,
+                'id'       => $event->getId(),
+                'action'   => 'create',
+            ]);
         }
 
         return $this->render('event/new.html.twig', [
@@ -205,8 +211,11 @@ class EventController extends AbstractController
             $event->setVisibleTo(empty($visibleTo) ? null : array_map('intval', $visibleTo));
 
             $this->em->flush();
-            $this->addFlash('success', 'Événement mis à jour.');
-            return $this->redirectToRoute('app_event_index', ['childId' => $childId]);
+            return $this->redirectToRoute('app_event_notify', [
+                'childId' => $childId,
+                'id'      => $event->getId(),
+                'action'  => 'update',
+            ]);
         }
 
         return $this->render('event/new.html.twig', [
@@ -223,22 +232,29 @@ class EventController extends AbstractController
         $child = $this->getChildAndCheckAccess($childId);
         $this->denyAccessUnlessGranted('CHILD_EDIT', $child);
 
-        // CSRF uniquement pour les soumissions de formulaire (pas AJAX)
-        if (!$request->isXmlHttpRequest()) {
-            if (!$this->isCsrfTokenValid('delete_event_' . $event->getId(), $request->request->get('_token'))) {
-                throw $this->createAccessDeniedException();
-            }
-        }
-
-        $this->em->remove($event);
-        $this->em->flush();
-
+        // Suppression AJAX depuis la modal (sans pop-up validation) → suppression directe
         if ($request->isXmlHttpRequest()) {
+            $snapshot = $event->toSnapshot();
+            $this->em->remove($event);
+            $this->em->flush();
             return new JsonResponse(['success' => true]);
         }
 
-        $this->addFlash('success', 'Événement supprimé.');
-        return $this->redirectToRoute('app_event_index', ['childId' => $childId]);
+        // Suppression depuis formulaire → pop-up notification/validation
+        $snapshot = $event->toSnapshot();
+        // Stocker le snapshot avant suppression en session
+        $request->getSession()->set('delete_event_' . $event->getId(), [
+            'snapshot'  => $snapshot,
+            'childId'   => $childId,
+            'eventId'   => $event->getId(),
+            'eventTitle' => $event->getTitle(),
+        ]);
+
+        return $this->redirectToRoute('app_event_notify', [
+            'childId' => $childId,
+            'id'      => $event->getId(),
+            'action'  => 'delete',
+        ]);
     }
 
     /** Vue "Partagé avec moi" — tous enfants confondus */

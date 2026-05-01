@@ -37,5 +37,6 @@ security:
         - { path: ^/reset-password/,    roles: PUBLIC_ACCESS }
         - { path: ^/share/,             roles: PUBLIC_ACCESS }
         - { path: ^/invite/accept/,     roles: PUBLIC_ACCESS }
+        - { path: ^/event/approval/,    roles: PUBLIC_ACCESS }
         - { path: ^/analytics/track,    roles: PUBLIC_ACCESS }
         - { path: ^/,                   roles: ROLE_USER }

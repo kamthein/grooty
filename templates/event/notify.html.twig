@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% block title %}Notifier — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+.notify-card { background: var(--white); border-radius: 18px; border: 1px solid var(--sand); padding: 1.5rem; margin-bottom: 1rem; }
+.guardian-row { display: flex; align-items: center; gap: .8rem; padding: .6rem 0; border-bottom: 1px solid var(--warm); }
+.guardian-row:last-child { border-bottom: none; }
+.guardian-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: .75rem; font-weight: 700; flex-shrink: 0; background: var(--forest); }
+.guardian-name { flex: 1; font-size: .88rem; font-weight: 500; }
+.guardian-email { font-size: .75rem; color: var(--muted); }
+.check-group { display: flex; gap: 1rem; }
+.check-label { display: flex; align-items: center; gap: .3rem; font-size: .78rem; color: var(--muted); cursor: pointer; }
+.check-label input { accent-color: var(--forest); width: 16px; height: 16px; }
+.action-badge { display: inline-block; padding: .2rem .7rem; border-radius: 100px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.action-create { background: rgba(61,90,71,.1); color: var(--forest); }
+.action-update { background: rgba(196,113,74,.1); color: var(--terracotta); }
+.action-delete { background: rgba(220,53,69,.1); color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main" style="max-width:600px;">
+
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+        <a href="{{ path('app_train', {'childId': childId}) }}" class="btn btn-ghost btn-sm">← Retour</a>
+        <h1 style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:300;">
+            {% if action == 'create' %}Événement créé
+            {% elseif action == 'update' %}Événement modifié
+            {% else %}Suppression
+            {% endif %}
+        </h1>
+        <span class="action-badge action-{{ action }}">
+            {% if action == 'create' %}Nouveau{% elseif action == 'update' %}Modifié{% else %}Suppression{% endif %}
+        </span>
+    </div>
+
+    {% if event %}
+    <div class="notify-card" style="background:var(--warm);border:none;">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem;">
+            {{ event.type|upper }}
+        </div>
+        <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:.3rem;">{{ event.title }}</div>
+        <div style="font-size:.85rem;color:var(--muted);">
+            📅 {{ event.startAt|date('d/m/Y') }}
+            {% if event.endAt and event.endAt|date('d/m/Y') != event.startAt|date('d/m/Y') %}
+                → {{ event.endAt|date('d/m/Y') }}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if otherGuardians is empty %}
+        <div class="notify-card" style="text-align:center;color:var(--muted);">
+            <p>Aucun autre gardien sur cet enfant.</p>
+            <form method="post" style="margin-top:1rem;">
+                <button type="submit" class="btn btn-primary">Continuer sans notifier</button>
+            </form>
+        </div>
+    {% else %}
+
+    <form method="post">
+        <div class="notify-card">
+            <h2 class="card-title">🔔 Avertir du changement</h2>
+            <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">
+                Cochez les gardiens qui recevront un email d'information.
+            </p>
+
+            {% for cg in otherGuardians %}
+            {% set g = cg.guardian %}
+            <div class="guardian-row">
+                <div class="guardian-avatar">{{ g.firstName|first|upper }}{{ g.lastName|first|upper }}</div>
+                <div style="flex:1;">
+                    <div class="guardian-name">{{ g.fullName }}</div>
+                    <div class="guardian-email">{{ g.email }}</div>
+                </div>
+                <div class="check-group">
+                    <label class="check-label">
+                        <input type="checkbox" name="notify[]" value="{{ g.id }}"
+                               {% if g.id in defaultNotify %}checked{% endif %}>
+                        Notifier
+                    </label>
+                    {% if action != 'create' %}
+                    <label class="check-label" style="color:var(--terracotta);">
+                        <input type="checkbox" name="validate[]" value="{{ g.id }}"
+                               style="accent-color:var(--terracotta);">
+                        Valider
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if action != 'create' %}
+        <div class="notify-card" style="background:rgba(196,113,74,.05);border-color:rgba(196,113,74,.2);">
+            <div style="display:flex;gap:.6rem;align-items:flex-start;">
+                <span style="font-size:1.2rem;">⚠️</span>
+                <div>
+                    <div style="font-weight:600;font-size:.88rem;color:var(--terracotta);margin-bottom:.3rem;">Demande de validation</div>
+                    <div style="font-size:.82rem;color:var(--muted);line-height:1.5;">
+                        Si vous cochez "Valider", la modification ne sera appliquée qu'après l'accord de tous les gardiens sélectionnés.
+                        En cas de refus, la modification sera annulée.
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem;">
+            <a href="{{ path('app_train', {'childId': childId}) }}" class="btn btn-ghost">
+                Ignorer
+            </a>
+            <button type="submit" class="btn btn-primary">
+                {% if action == 'delete' %}Confirmer la suppression{% else %}Enregistrer et notifier{% endif %}
+            </button>
+        </div>
+    </form>
+
+    {% endif %}
+</div>
+{% endblock %}

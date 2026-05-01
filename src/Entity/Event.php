@@ -64,6 +64,12 @@ class Event
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $visibleTo = null;
 
+    #[ORM\Column(length: 20)]
+    private string $status = 'active';
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $pendingSnapshot = null;
+
     // Image associée à l'événement (optionnel, réutilisable)
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -100,6 +106,24 @@ class Event
     public function setResponsibleGuardian(?Guardian $guardian): static { $this->responsibleGuardian = $guardian; return $this; }
     public function getVisibleTo(): ?array { return $this->visibleTo; }
     public function setVisibleTo(?array $ids): static { $this->visibleTo = $ids; return $this; }
+    public function getStatus(): string { return $this->status; }
+    public function setStatus(string $s): static { $this->status = $s; return $this; }
+    public function isPending(): bool { return $this->status === 'pending'; }
+    public function getPendingSnapshot(): ?array { return $this->pendingSnapshot; }
+    public function setPendingSnapshot(?array $s): static { $this->pendingSnapshot = $s; return $this; }
+
+    public function toSnapshot(): array
+    {
+        return [
+            'title'       => $this->title,
+            'type'        => $this->type,
+            'startAt'     => $this->startAt?->format('d/m/Y H:i'),
+            'endAt'       => $this->endAt?->format('d/m/Y H:i'),
+            'allDay'      => $this->allDay,
+            'description' => $this->description,
+            'visibleTo'   => $this->visibleTo,
+        ];
+    }
     public function getImage(): ?EventImage { return $this->image; }
     public function setImage(?EventImage $image): static { $this->image = $image; return $this; }
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }

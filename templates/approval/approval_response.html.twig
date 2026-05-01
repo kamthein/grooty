@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% block title %}Réponse — Grooty{% endblock %}
+{% block body %}
+<div class="main" style="max-width:500px;padding-top:3rem;text-align:center;">
+    {% if status == 'approved' %}
+    <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
+    <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;margin-bottom:.8rem;color:var(--forest);">
+        Modification validée
+    </h1>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:2rem;">
+        Merci ! La modification sera appliquée dès que tous les gardiens concernés auront validé.
+    </p>
+    {% else %}
+    <div style="font-size:3rem;margin-bottom:1rem;">❌</div>
+    <h1 style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;margin-bottom:.8rem;color:var(--terracotta);">
+        Modification refusée
+    </h1>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:2rem;">
+        La modification ne sera pas appliquée. L'organisateur sera notifié.
+    </p>
+    {% endif %}
+    <a href="{{ path('app_dashboard') }}" class="btn btn-primary">Aller au calendrier</a>
+</div>
+{% endblock %}
