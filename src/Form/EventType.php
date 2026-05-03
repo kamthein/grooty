@@ -2,6 +2,7 @@
 
 namespace App\Form;
 
+use App\Entity\Child;
 use App\Entity\Event;
 use App\Entity\Guardian;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -9,6 +10,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -18,7 +20,10 @@ class EventType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $guardianChoices = array_map(fn($cg) => $cg->getGuardian(), $options['guardians']);
+        $guardianChoices = array_filter(
+            array_map(fn($cg) => $cg->getGuardian(), $options['guardians']),
+            fn($g) => $g !== null
+        );
 
         $builder
             ->add('title', TextType::class, [
@@ -37,9 +42,9 @@ class EventType extends AbstractType
                 'expanded' => true,
             ])
             ->add('startAt', DateTimeType::class, [
-                'label'        => 'Début',
-                'widget'       => 'single_text',
-                'html5'        => true,
+                'label'  => 'Début',
+                'widget' => 'single_text',
+                'html5'  => true,
             ])
             ->add('endAt', DateTimeType::class, [
                 'label'    => 'Fin',
@@ -65,6 +70,13 @@ class EventType extends AbstractType
                     'Chaque mois'    => Event::RECURRENCE_MONTHLY,
                 ],
             ])
+            ->add('recurrenceEndAt', DateType::class, [
+                'label'    => 'Répéter jusqu\'au',
+                'widget'   => 'single_text',
+                'html5'    => true,
+                'required' => false,
+                'mapped'   => true,
+            ])
             ->add('responsibleGuardian', EntityType::class, [
                 'label'        => 'Gardien responsable',
                 'class'        => Guardian::class,
@@ -86,6 +98,16 @@ class EventType extends AbstractType
                 'required' => false,
                 'mapped'   => false,
                 'data'     => $options['visible_to'],
+            ])
+            ->add('extraChildren', EntityType::class, [
+                'label'        => 'Aussi pour',
+                'class'        => Child::class,
+                'choices'      => $options['extra_children'],
+                'choice_label' => fn(Child $c) => $c->getFirstName(),
+                'expanded'     => true,
+                'multiple'     => true,
+                'required'     => false,
+                'mapped'       => false,
             ]);
     }
 
@@ -95,6 +117,7 @@ class EventType extends AbstractType
             'data_class'      => Event::class,
             'guardians'       => [],
             'visible_to'      => [],
+            'extra_children'  => [],
             'csrf_protection' => false,
         ]);
     }

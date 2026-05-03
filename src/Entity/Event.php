@@ -55,6 +55,12 @@ class Event
     #[ORM\Column(length: 50)]
     private string $recurrence = self::RECURRENCE_NONE;
 
+    #[ORM\Column(type: 'date', nullable: true)]
+    private ?\DateTime $recurrenceEndAt = null;
+
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $recurrenceGroupId = null;
+
     // Gardien responsable ce jour-là (ex: qui garde l'enfant)
     #[ORM\ManyToOne]
     private ?Guardian $responsibleGuardian = null;
@@ -102,6 +108,10 @@ class Event
     public function setAllDay(bool $allDay): static { $this->allDay = $allDay; return $this; }
     public function getRecurrence(): string { return $this->recurrence; }
     public function setRecurrence(string $recurrence): static { $this->recurrence = $recurrence; return $this; }
+    public function getRecurrenceEndAt(): ?\DateTime { return $this->recurrenceEndAt; }
+    public function setRecurrenceEndAt(?\DateTime $d): static { $this->recurrenceEndAt = $d; return $this; }
+    public function getRecurrenceGroupId(): ?string { return $this->recurrenceGroupId; }
+    public function setRecurrenceGroupId(?string $id): static { $this->recurrenceGroupId = $id; return $this; }
     public function getResponsibleGuardian(): ?Guardian { return $this->responsibleGuardian; }
     public function setResponsibleGuardian(?Guardian $guardian): static { $this->responsibleGuardian = $guardian; return $this; }
     public function getVisibleTo(): ?array { return $this->visibleTo; }

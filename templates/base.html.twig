@@ -184,6 +184,7 @@
     <div class="navbar-nav">
         <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
         <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
+        <a href="{{ path('app_global_calendar') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_global_calendar' %}active{% endif %}">🗓️ Global</a>
         {% if app.user.email == 'lesaichot.camille@gmail.com' %}
         <a href="{{ path('admin_analytics') }}" class="nav-link {% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">📊</a>
         {% endif %}

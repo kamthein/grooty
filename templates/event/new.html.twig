@@ -88,16 +88,36 @@
                 {{ form_label(form.allDay, null, {'label_attr': {'style': 'font-size:.85rem;color:var(--muted);cursor:pointer;'}}) }}
             </div>
 
+            {# RÉCURRENCE #}
+            <div class="form-group">
+                {{ form_label(form.recurrence, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.recurrence, {'attr': {'class': 'form-control', 'id': 'field-recurrence'}}) }}
+            </div>
+
+            <div class="form-group" id="recurrence-end-group" style="display:none;">
+                <label class="form-label">Répéter jusqu'au</label>
+                {{ form_widget(form.recurrenceEndAt, {'attr': {'class': 'form-control', 'id': 'field-recurrenceEndAt'}}) }}
+            </div>
+
+            {# ENFANTS SUPPLÉMENTAIRES #}
+            {% if form.extraChildren.vars.choices is not empty %}
+            <div class="form-group">
+                <label class="form-label">Aussi pour</label>
+                <div style="background:var(--warm);border-radius:12px;padding:.8rem 1rem;">
+                    {% for choice in form.extraChildren %}
+                    <label style="display:flex;align-items:center;gap:.6rem;padding:.3rem 0;font-size:.88rem;cursor:pointer;">
+                        {{ form_widget(choice, {'attr': {'style': 'accent-color:var(--forest);width:16px;height:16px;'}}) }}
+                        {{ choice.vars.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             {# DESCRIPTION #}
             <div class="form-group">
                 {{ form_label(form.description, null, {'label_attr': {'class': 'form-label'}}) }}
                 {{ form_widget(form.description, {'attr': {'class': 'form-control'}}) }}
-            </div>
-
-            {# RÉCURRENCE #}
-            <div class="form-group">
-                {{ form_label(form.recurrence, null, {'label_attr': {'class': 'form-label'}}) }}
-                {{ form_widget(form.recurrence, {'attr': {'class': 'form-control'}}) }}
             </div>
 
             {# RESPONSABLE #}
@@ -245,7 +265,18 @@ document.querySelectorAll('.vis-label input').forEach(input => {
     update();
     input.addEventListener('change', update);
 });
-// ── Dates ──
+// ── Récurrence ──
+function toggleRecurrenceEnd(val) {
+    const group = document.getElementById('recurrence-end-group');
+    if (group) group.style.display = (val && val !== 'none') ? '' : 'none';
+}
+
+// Sélecteur par name car Symfony génère son propre id
+const recurrenceField = document.querySelector('select[name*="recurrence"]:not([name*="End"])');
+if (recurrenceField) {
+    recurrenceField.addEventListener('change', function() { toggleRecurrenceEnd(this.value); });
+    toggleRecurrenceEnd(recurrenceField.value);
+}
 const startAt = document.getElementById('field-startAt');
 const endAt   = document.getElementById('field-endAt');
 const allDay  = document.getElementById('field-allDay');

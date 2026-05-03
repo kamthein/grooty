@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+{% block title %}Tous les calendriers — Grooty{% endblock %}
+
+{% block stylesheets %}
+<style>
+body { background: linear-gradient(180deg,#B8D4E8 0%,#D6EAF8 40%,#EAF4F8 70%,#E8F5E0 100%) !important; min-height:100vh; }
+
+.week-block {
+    background: rgba(255,255,255,.88); backdrop-filter: blur(8px);
+    border-radius: 20px; border: 2px solid rgba(255,255,255,.9);
+    padding: 1.2rem 1.2rem .5rem; margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(44,62,80,.1); overflow-x: auto;
+}
+.week-label { font-family:'Fraunces',serif; font-size:.9rem; color:var(--muted); margin-bottom:1rem; }
+
+.train-row { display:flex; align-items:flex-end; gap:4px; padding-bottom:.8rem; min-width:max-content; }
+
+/* Légende enfants */
+.legend { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+.legend-item { display:flex; align-items:center; gap:.4rem; font-size:.8rem; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* Cases jour */
+.day-col { flex-shrink:0; width:112px; }
+.day-card {
+    border-radius:12px 12px 4px 4px; padding:.5rem .5rem .45rem;
+    display:flex; flex-direction:column; gap:2px; position:relative;
+    background:rgba(255,255,255,.7); border:1.5px solid rgba(255,255,255,.8);
+    box-shadow:0 3px 10px rgba(0,0,0,.06);
+    transition:transform .15s;
+}
+.day-card:hover { transform:translateY(-3px); }
+.day-col.today .day-card { border-color:var(--terracotta) !important; background:rgba(196,113,74,.05); }
+.day-name { font-size:.54rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(0,0,0,.4); }
+.day-date { font-family:'Fraunces',serif; font-size:1rem; font-weight:700; color:rgba(0,0,0,.65); line-height:1; margin-bottom:3px; }
+.day-col.today .day-date { color:var(--terracotta); }
+
+.ev-block {
+    border-radius:6px; padding:.25rem .4rem;
+    font-size:.52rem; line-height:1.3; color:white;
+    display:flex; align-items:flex-start; gap:2px; cursor:pointer;
+}
+.ev-child-tag { font-size:.48rem; opacity:.8; }
+
+.w-wheels { display:flex; gap:8px; justify-content:center; padding:3px 8px 0; }
+.w-wheel { width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#666,#111); border:2px solid #888; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(44,62,80,.35); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:1rem; }
+.modal-inner { background:white; border-radius:20px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 24px 64px rgba(44,62,80,.25); }
+.modal-band { height:5px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="main">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:1rem;">
+        <h1 style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:300;">
+            🗓️ Tous les <em style="font-style:italic;color:var(--terracotta)">calendriers</em>
+        </h1>
+    </div>
+
+    {# Légende #}
+    <div class="legend">
+        {% for item in children %}
+        <div class="legend-item">
+            <div class="legend-dot" style="background:{{ item.color }};"></div>
+            <span>{{ item.child.firstName }}</span>
+        </div>
+        {% endfor %}
+        <span style="font-size:.75rem;color:var(--muted);">· Aujourd'hui ✦</span>
+    </div>
+
+    {% set joursFR = {'Mon':'Lun','Tue':'Mar','Wed':'Mer','Thu':'Jeu','Fri':'Ven','Sat':'Sam','Sun':'Dim'} %}
+    {% set today   = 'now'|date('Y-m-d') %}
+
+    {% for weekOffset in 0..11 %}
+        {% set wStart = 'monday this week'|date_modify('+' ~ weekOffset ~ ' weeks') %}
+        {% set wEnd   = wStart|date_modify('+6 days') %}
+
+        {% if wEnd|date('Y-m') >= 'now'|date('Y-m') or weekOffset == 0 %}
+        <div class="week-block">
+            <div class="week-label">
+                Semaine {{ wStart|date('W') }} · du {{ wStart|date('d') }} au {{ wEnd|date('d') }} {{ wEnd|date('F Y') }}
+            </div>
+            <div class="train-row">
+                {% for d in 0..6 %}
+                    {% set day     = wStart|date_modify('+' ~ d ~ ' days') %}
+                    {% set dayKey  = day|date('Y-m-d') %}
+                    {% set isToday = dayKey == today %}
+                    {% set dayEvts = weekByDay[weekOffset] is defined and weekByDay[weekOffset][dayKey] is defined
+                                     ? weekByDay[weekOffset][dayKey] : [] %}
+
+                    <div class="day-col {% if isToday %}today{% endif %}">
+                        <div class="day-card">
+                            <div class="day-name">{{ joursFR[day|date('D')]|default(day|date('D')) }}{% if isToday %} ✦{% endif %}</div>
+                            <div class="day-date">{{ day|date('d') }}</div>
+
+                            {% for item in dayEvts %}
+                            {% set e = item.event %}
+                            {% if e.id %}
+                            <div class="ev-block" style="background:{{ item.color }};"
+                                 onclick="openModal(
+                                     '{{ e.title|e('html_attr') }}',
+                                     '{{ e.type }}',
+                                     '{{ e.startAt|date('d/m/Y') }}',
+                                     {% if e.endAt %}'{{ e.endAt|date('d/m/Y') }}'{% else %}null{% endif %},
+                                     '{{ item.child.firstName }}',
+                                     '{{ item.color }}',
+                                     '{{ e.description ? e.description|e('html_attr') : '' }}'
+                                 )">
+                                <span>{% if e.type=='garde' %}🏠{% elseif e.type=='activite' %}🏃{% elseif e.type=='medical' %}🏥{% elseif e.type=='vacances' %}🌴{% else %}📌{% endif %}</span>
+                                <span>{{ e.title|slice(0,14) }}{% if e.title|length > 14 %}…{% endif %}</span>
+                            </div>
+                            {% else %}
+                            <div style="background:rgba(0,0,0,.06);border-radius:6px;padding:.25rem .4rem;font-size:.52rem;color:rgba(0,0,0,.35);">🔒 Occupé</div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="w-wheels"><div class="w-wheel"></div><div class="w-wheel"></div></div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{# Modal simple #}
+<div id="ev-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-inner">
+        <div class="modal-band" id="modal-band"></div>
+        <div id="modal-content" style="padding:1.5rem;"></div>
+        <div style="padding:.5rem 1.5rem 1.5rem;text-align:right;">
+            <button onclick="closeModal()" class="btn btn-ghost btn-sm">Fermer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const typeLabels = {garde:'🏠 Garde',activite:'🏃 Activité',medical:'🏥 Médical',vacances:'🌴 Vacances',autre:'📌 Autre'};
+
+function openModal(title, type, start, end, childName, color, description) {
+    const date = end && end !== start ? `Du ${start} au ${end}` : start;
+    document.getElementById('modal-band').style.background = color;
+    document.getElementById('modal-content').innerHTML = `
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8A8578;margin-bottom:.4rem;">${typeLabels[type]||type}</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:1.2rem;font-weight:400;margin-bottom:.3rem;">${title}</h2>
+        <div style="display:inline-block;padding:.15rem .6rem;border-radius:100px;font-size:.75rem;font-weight:600;color:white;background:${color};margin-bottom:.6rem;">${childName}</div>
+        <div style="font-size:.84rem;color:#6B7280;margin-bottom:${description?'.8rem':'0'};">📅 ${date}</div>
+        ${description ? `<p style="font-size:.85rem;line-height:1.5;color:#3D3D38;">${description}</p>` : ''}
+    `;
+    document.getElementById('ev-modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('ev-modal').style.display = 'none'; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+{% endblock %}

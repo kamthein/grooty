@@ -89,7 +89,8 @@ class EventController extends AbstractController
         int $childId,
         Request $request,
         \App\Repository\EventImageRepository $imageRepo,
-        \App\Service\LocalUploadService $uploadService
+        \App\Service\LocalUploadService $uploadService,
+        \App\Service\RecurrenceService $recurrenceService
     ): Response {
         $child = $this->getChildAndCheckAccess($childId);
         $this->denyAccessUnlessGranted('CHILD_EDIT', $child);
@@ -105,8 +106,18 @@ class EventController extends AbstractController
             $event->setEndAt(new \DateTime($request->query->get('start') . ' +1 hour'));
         }
 
+        // Autres enfants du même guardian pour événement commun
+        $allChildren = $this->cgRepo->findByGuardian($this->getUser());
+        $extraChildrenChoices = array_filter(
+            array_map(fn($cg) => $cg->getChild(), $allChildren),
+            fn($c) => $c->getId() !== $child->getId()
+        );
+
         $guardians = $this->cgRepo->findByChild($child);
-        $form = $this->createForm(EventType::class, $event, ['guardians' => $guardians]);
+        $form = $this->createForm(EventType::class, $event, [
+            'guardians'      => $guardians,
+            'extra_children' => $extraChildrenChoices,
+        ]);
         $form->handleRequest($request);
 
         // Bibliothèque d'images existantes pour cet enfant
@@ -126,7 +137,6 @@ class EventController extends AbstractController
             $uploadedFile = $request->files->get('event_image_file');
             if ($uploadedFile) {
                 $paths = $uploadService->uploadEventImage($uploadedFile);
-
                 $img = new \App\Entity\EventImage();
                 $img->setChild($child);
                 $img->setUploadedBy($this->getUser());
@@ -137,19 +147,33 @@ class EventController extends AbstractController
                 $event->setImage($img);
             }
 
-            // 3. Visibilité (champ non mappé)
+            // 3. Visibilité
             $visibleTo = $form->get('visibleTo')->getData();
             $event->setVisibleTo(empty($visibleTo) ? null : array_map('intval', $visibleTo));
 
             $this->em->persist($event);
+
+            // 4. Récurrence — générer les occurrences
+            if ($event->getRecurrence() !== Event::RECURRENCE_NONE && $event->getRecurrenceEndAt()) {
+                $recurrenceService->generateOccurrences($event);
+            }
+
+            // 5. Enfants supplémentaires
+            $extraChildren = $form->get('extraChildren')->getData();
+            foreach ($extraChildren as $extraChild) {
+                $copy = $recurrenceService->duplicateForChild($event, $extraChild);
+                $this->em->persist($copy);
+                if ($event->getRecurrence() !== Event::RECURRENCE_NONE && $event->getRecurrenceEndAt()) {
+                    $recurrenceService->generateOccurrences($copy);
+                }
+            }
+
             $this->em->flush();
 
-            // Rediriger vers la pop-up de notification/validation
             return $this->redirectToRoute('app_event_notify', [
-                'childId'  => $childId,
-                'id'       => $event->getId(),
-                'action'   => 'create',
-            ]);
+                'childId' => $childId,
+                'id'      => $event->getId(),
+            ], 307);
         }
 
         return $this->render('event/new.html.twig', [
