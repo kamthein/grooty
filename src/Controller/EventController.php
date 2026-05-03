@@ -190,15 +190,24 @@ class EventController extends AbstractController
         Event $event,
         Request $request,
         \App\Repository\EventImageRepository $imageRepo,
-        \App\Service\LocalUploadService $uploadService
+        \App\Service\LocalUploadService $uploadService,
+        \App\Service\RecurrenceService $recurrenceService
     ): Response {
         $child = $this->getChildAndCheckAccess($childId);
         $this->denyAccessUnlessGranted('CHILD_EDIT', $child);
 
+        // Autres enfants du guardian pour "Aussi pour"
+        $allChildren = $this->cgRepo->findByGuardian($this->getUser());
+        $extraChildrenChoices = array_filter(
+            array_map(fn($cg) => $cg->getChild(), $allChildren),
+            fn($c) => $c->getId() !== $child->getId()
+        );
+
         $guardians = $this->cgRepo->findByChild($child);
         $form = $this->createForm(EventType::class, $event, [
-            'guardians'  => $guardians,
-            'visible_to' => $event->getVisibleTo() ?? [],
+            'guardians'      => $guardians,
+            'visible_to'     => $event->getVisibleTo() ?? [],
+            'extra_children' => $extraChildrenChoices,
         ]);
         $form->handleRequest($request);
 
@@ -233,6 +242,13 @@ class EventController extends AbstractController
             // Visibilité (champ non mappé)
             $visibleTo = $form->get('visibleTo')->getData();
             $event->setVisibleTo(empty($visibleTo) ? null : array_map('intval', $visibleTo));
+
+            // Enfants supplémentaires — créer l'événement pour les autres enfants
+            $extraChildren = $form->get('extraChildren')->getData();
+            foreach ($extraChildren as $extraChild) {
+                $copy = $recurrenceService->duplicateForChild($event, $extraChild);
+                $this->em->persist($copy);
+            }
 
             $this->em->flush();
             return $this->redirectToRoute('app_event_notify', [
