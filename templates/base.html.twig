@@ -53,10 +53,9 @@
         }
         .nav-user > a { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
 
-        /* ── MOBILE NAV RIGHT ── */
+        /* ── MOBILE NAV ── */
         .mobile-nav-right { display: none; align-items: center; gap: 4px; }
 
-        /* burger button */
         .burger-btn {
             padding: .3rem .5rem; border-radius: 100px; font-size: 1rem;
             background: none; border: 1.5px solid var(--sand);
@@ -64,7 +63,6 @@
             display: flex; align-items: center; line-height: 1;
         }
 
-        /* dropdown menu */
         .burger-menu {
             display: none;
             position: absolute; right: 0; top: calc(100% + 8px);
@@ -161,12 +159,12 @@
 
 {% if app.user %}
 <nav class="navbar">
+    {# Logo = lien dashboard #}
     <a href="{{ path('app_dashboard') }}" class="navbar-brand">Gr<em>oo</em>ty</a>
 
     {# Liens desktop #}
     <div class="navbar-nav">
-        <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
-        <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
+        <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
         <a href="{{ path('app_global_calendar') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_global_calendar' %}active{% endif %}">🗓️ Global</a>
         {% if app.user.email == 'lesaichot.camille@gmail.com' %}
         <a href="{{ path('admin_analytics') }}" class="nav-link {% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">📊</a>
@@ -178,18 +176,14 @@
         <a href="{{ path('app_profile') }}">{{ app.user.firstName }}</a>
         <a href="{{ path('app_logout') }}" class="btn btn-ghost btn-sm">Déconnexion</a>
 
-        {# Mobile : 3 liens fixes + burger #}
+        {# Mobile : 2 liens fixes + burger #}
         <div class="mobile-nav-right">
-            <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
+            <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
             <a href="{{ path('app_global_calendar') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_global_calendar' %}active{% endif %}">🗓️ Global</a>
-            <a href="{{ path('app_logout') }}" class="nav-link" title="Déconnexion">🚪</a>
 
             <div style="position: relative;">
                 <button class="burger-btn" id="mobile-burger" aria-label="Menu">☰</button>
                 <div class="burger-menu" id="mobile-menu">
-                    <a href="{{ path('app_child_index') }}" class="{% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">
-                        👶 Enfants
-                    </a>
                     {% if app.user.email == 'lesaichot.camille@gmail.com' %}
                     <a href="{{ path('admin_analytics') }}" class="{% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">
                         📊 Stats
@@ -197,6 +191,9 @@
                     {% endif %}
                     <a href="{{ path('app_profile') }}" class="{% if 'profile' in app.request.attributes.get('_route','') %}active{% endif %}">
                         👤 {{ app.user.firstName }}
+                    </a>
+                    <a href="{{ path('app_logout') }}">
+                        🚪 Déconnexion
                     </a>
                 </div>
             </div>
@@ -386,7 +383,7 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 {% endif %}
 
-{# Bannière douce d'invitation aux notifications #}
+{# Bannière notifications #}
 {% if app.user %}
 <div id="push-banner"
      style="display:none;position:fixed;bottom:12px;
@@ -424,8 +421,7 @@ function urlBase64ToUint8Array(base64String) {
 
     burger.addEventListener('click', function (e) {
         e.stopPropagation();
-        const isOpen = menu.style.display === 'block';
-        menu.style.display = isOpen ? 'none' : 'block';
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     });
 
     document.addEventListener('click', function (e) {
