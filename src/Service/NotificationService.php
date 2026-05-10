@@ -62,7 +62,12 @@ class NotificationService
     /** Envoie le lien d'invitation par email */
     public function sendInvitation(ChildGuardian $cg, Guardian $invitedBy): void
     {
-        $email    = $cg->getInviteEmail();
+
+        // Utiliser l'email du guardian existant si pas d'inviteEmail
+         $email = $cg->getInviteEmail() ?? $cg->getGuardian()?->getEmail();
+        if (!$email) return; // sécurité
+     
+        //$email    = $cg->getInviteEmail();
         $child    = $cg->getChild();
         $token    = $cg->getInviteToken();
         $link     = $this->appBaseUrl . '/invite/accept/' . $token;

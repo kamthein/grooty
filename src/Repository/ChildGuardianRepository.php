@@ -14,6 +14,7 @@ class ChildGuardianRepository extends ServiceEntityRepository
         parent::__construct($registry, ChildGuardian::class);
     }
 
+
     public function findByGuardian(Guardian $guardian): array
     {
         return $this->createQueryBuilder('cg')
@@ -28,7 +29,7 @@ class ChildGuardianRepository extends ServiceEntityRepository
     public function findByChild(Child $child): array
     {
         return $this->createQueryBuilder('cg')
-            ->innerJoin('cg.guardian', 'g')
+            ->leftJoin('cg.guardian', 'g')   // ← LEFT JOIN pour garder les invitations en attente
             ->addSelect('g')
             ->where('cg.child = :child')
             ->setParameter('child', $child)

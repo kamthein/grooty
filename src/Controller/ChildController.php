@@ -153,6 +153,7 @@ class ChildController extends AbstractController
             $cg->setPermission($data['permission'] ?? ChildGuardian::PERM_VIEW);
             $cg->setInviteToken(bin2hex(random_bytes(16)));
 
+
             if ($existingGuardian) {
                 $cg->setGuardian($existingGuardian);
                 $cg->setInviteAccepted(false);
