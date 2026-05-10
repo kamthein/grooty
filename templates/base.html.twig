@@ -22,22 +22,14 @@
             --ink: #1C1C1A; --ink-soft: #3D3D38; --muted: #8A8578;
             --white: #FFFFFF;
             --nav-h: 60px;
-            --bottom-h: 64px;
         }
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--cream);
             color: var(--ink);
-            /* iOS Safari — éviter que le contenu passe sous la bottom nav */
-            padding-bottom: 0;
         }
 
-        @supports (-webkit-touch-callout: none) {
-            /* iOS uniquement */
-            body { padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom)); }
-        }
-
-        /* ── NAVBAR DESKTOP ── */
+        /* ── NAVBAR ── */
         .navbar {
             position: sticky; top: 0; z-index: 100;
             background: var(--white); border-bottom: 1px solid var(--sand);
@@ -59,39 +51,37 @@
         .nav-user {
             display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
         }
-        .nav-user a { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
+        .nav-user > a { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
 
-        /* ── BOTTOM NAV MOBILE ── */
-        .bottom-nav {
+        /* ── MOBILE NAV RIGHT ── */
+        .mobile-nav-right { display: none; align-items: center; gap: 4px; }
+
+        /* burger button */
+        .burger-btn {
+            padding: .3rem .5rem; border-radius: 100px; font-size: 1rem;
+            background: none; border: 1.5px solid var(--sand);
+            cursor: pointer; color: var(--muted);
+            display: flex; align-items: center; line-height: 1;
+        }
+
+        /* dropdown menu */
+        .burger-menu {
             display: none;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            z-index: 1000;
-            background: var(--white);
-            border-top: 1px solid var(--sand);
-            padding-bottom: env(safe-area-inset-bottom);
-            /* iOS Safari fix — force GPU layer */
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            will-change: transform;
+            position: absolute; right: 0; top: calc(100% + 8px);
+            background: var(--white); border: 1px solid var(--sand);
+            border-radius: 14px; min-width: 170px; z-index: 200;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         }
-        .bottom-nav-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            height: var(--bottom-h);
-            padding: 0 .5rem;
+        .burger-menu a {
+            display: flex; align-items: center; gap: 8px;
+            padding: .7rem 1rem; font-size: .85rem; color: var(--ink);
+            text-decoration: none; border-bottom: 1px solid var(--sand);
+            transition: background 0.1s;
         }
-        .bottom-nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 2px;
-            text-decoration: none; color: var(--muted); font-size: 0.62rem;
-            font-weight: 500; padding: 0.4rem 0.5rem; border-radius: 12px;
-            transition: all 0.15s; flex: 1; max-width: 80px;
-        }
-        .bottom-nav-item .bn-icon { font-size: 1.3rem; line-height: 1; }
-        .bottom-nav-item.active { color: var(--forest); }
+        .burger-menu a:last-child { border-bottom: none; }
+        .burger-menu a:hover { background: var(--warm); }
+        .burger-menu a.active { color: var(--forest); font-weight: 600; }
 
         /* ── FLASH ── */
         .flash-container { max-width: 900px; margin: 0.8rem auto; padding: 0 1rem; }
@@ -152,35 +142,28 @@
         }
 
         /* ── MOBILE ── */
-        /* ── MOBILE : navbar compacte en haut ── */
         @media (max-width: 640px) {
             .navbar { padding: 0 .8rem; height: 52px; }
             .navbar-brand { font-size: 1.1rem; }
-            .navbar-nav { display: flex; gap: 0; }
-            .nav-link { padding: .3rem .55rem; font-size: .75rem; }
-            .nav-user .btn { display: none; }
-            .nav-user a:not(.mobile-only) { font-size: .75rem; }
-            .mobile-only { display: inline-flex !important; }
-            .bottom-nav { display: none !important; }
-            body { padding-bottom: 0; }
+            .navbar-nav { display: none; }
+            .nav-user > a { display: none; }
+            .nav-user > .btn-ghost { display: none; }
+            .mobile-nav-right { display: flex; }
             .main { padding: 1rem; }
             .card { padding: 1rem; border-radius: 14px; }
             .flash-container { padding: 0 0.8rem; }
             .flash { font-size: 0.82rem; padding: 0.65rem 1rem; }
             .btn-full-mobile { width: 100%; justify-content: center; }
         }
-
-        @media (min-width: 641px) {
-            .bottom-nav { display: none !important; }
-        }
     </style>
 </head>
 <body>
 
 {% if app.user %}
-{# ── NAVBAR DESKTOP ── #}
 <nav class="navbar">
     <a href="{{ path('app_dashboard') }}" class="navbar-brand">Gr<em>oo</em>ty</a>
+
+    {# Liens desktop #}
     <div class="navbar-nav">
         <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
         <a href="{{ path('app_child_index') }}" class="nav-link {% if 'child' in app.request.attributes.get('_route','') %}active{% endif %}">👶 Enfants</a>
@@ -189,37 +172,37 @@
         <a href="{{ path('admin_analytics') }}" class="nav-link {% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">📊</a>
         {% endif %}
     </div>
+
+    {# Desktop : profil + déconnexion #}
     <div class="nav-user">
-        <a href="{{ path('app_profile') }}" style="font-size:.82rem;color:var(--muted);text-decoration:none;">{{ app.user.firstName }}</a>
+        <a href="{{ path('app_profile') }}">{{ app.user.firstName }}</a>
         <a href="{{ path('app_logout') }}" class="btn btn-ghost btn-sm">Déconnexion</a>
-        <a href="{{ path('app_logout') }}" class="nav-link mobile-only" style="display:none;">🚪</a>
+
+        {# Mobile : 3 liens fixes + burger #}
+        <div class="mobile-nav-right">
+            <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">🏠 Accueil</a>
+            <a href="{{ path('app_global_calendar') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_global_calendar' %}active{% endif %}">🗓️ Global</a>
+            <a href="{{ path('app_logout') }}" class="nav-link" title="Déconnexion">🚪</a>
+
+            <div style="position: relative;">
+                <button class="burger-btn" id="mobile-burger" aria-label="Menu">☰</button>
+                <div class="burger-menu" id="mobile-menu">
+                    <a href="{{ path('app_child_index') }}" class="{% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">
+                        👶 Enfants
+                    </a>
+                    {% if app.user.email == 'lesaichot.camille@gmail.com' %}
+                    <a href="{{ path('admin_analytics') }}" class="{% if 'analytics' in app.request.attributes.get('_route','') %}active{% endif %}">
+                        📊 Stats
+                    </a>
+                    {% endif %}
+                    <a href="{{ path('app_profile') }}" class="{% if 'profile' in app.request.attributes.get('_route','') %}active{% endif %}">
+                        👤 {{ app.user.firstName }}
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </nav>
-
-{# ── BOTTOM NAV MOBILE ── #}
-<div class="bottom-nav">
-    <div class="bottom-nav-inner">
-        <a href="{{ path('app_dashboard') }}"
-           class="bottom-nav-item {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
-            <span class="bn-icon">🏠</span>
-            <span>Accueil</span>
-        </a>
-        <a href="{{ path('app_child_index') }}"
-           class="bottom-nav-item {% if 'child' in app.request.attributes.get('_route','') or 'train' in app.request.attributes.get('_route','') %}active{% endif %}">
-            <span class="bn-icon">👶</span>
-            <span>Enfants</span>
-        </a>
-        <a href="{{ path('app_profile') }}"
-           class="bottom-nav-item {% if 'profile' in app.request.attributes.get('_route','') %}active{% endif %}">
-            <span class="bn-icon">👤</span>
-            <span>{{ app.user.firstName|slice(0,6) }}</span>
-        </a>
-        <a href="{{ path('app_logout') }}" class="bottom-nav-item">
-            <span class="bn-icon">🚪</span>
-            <span>Quitter</span>
-        </a>
-    </div>
-</div>
 {% endif %}
 
 <div class="flash-container">
@@ -242,7 +225,7 @@ const _GA = {
         return s;
     })(),
     queue:   [],
-    clicks:  {},  // pour rage click detection
+    clicks:  {},
 
     push(type, data = {}) {
         this.queue.push({
@@ -265,16 +248,13 @@ const _GA = {
     },
 
     init() {
-        // Page view
         this.push('page_view');
 
-        // Clic tracking
         document.addEventListener('click', e => {
             const el  = e.target;
             const tag = el.tagName.toLowerCase();
             const key = el.className + el.textContent?.slice(0, 30);
 
-            // Rage click : 3 clics en 2s sur le même élément
             const now = Date.now();
             if (!this.clicks[key]) this.clicks[key] = [];
             this.clicks[key] = this.clicks[key].filter(t => now - t < 2000);
@@ -289,7 +269,6 @@ const _GA = {
                 return;
             }
 
-            // Dead click : clic sur zone non interactive
             const interactive = ['a','button','input','select','textarea','label'];
             const isInteractive = interactive.includes(tag)
                 || el.closest('a,button,[onclick],[role=button]');
@@ -302,7 +281,6 @@ const _GA = {
             }
         }, true);
 
-        // Erreurs JS
         window.addEventListener('error', e => {
             this.push('js_error', {
                 message: e.message?.slice(0, 200),
@@ -311,7 +289,6 @@ const _GA = {
             });
         });
 
-        // Flush toutes les 30s et au départ de la page
         setInterval(() => this.flush(), 30000);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') this.flush();
@@ -328,12 +305,10 @@ const _GA = {
         return `${el.tagName.toLowerCase()}${id}${cls}${text ? ` "${text}"` : ''}`.slice(0, 200);
     },
 
-    // Tracker une action clé
     action(name, data = {}) {
         this.push('action', { action: name, ...data });
     },
 
-    // Tracker une étape funnel
     funnel(step) {
         this.push('funnel', { step });
         fetch('/onboarding/step/' + step, { method: 'POST' }).catch(() => {});
@@ -341,7 +316,7 @@ const _GA = {
 };
 
 _GA.init();
-window._GA = _GA; // accessible globalement
+window._GA = _GA;
 </script>
 {% endif %}
 
@@ -349,10 +324,8 @@ window._GA = _GA; // accessible globalement
 <script>
 if ('serviceWorker' in navigator && 'PushManager' in window) {
     navigator.serviceWorker.register('/sw.js').then(reg => {
-        // Vérifier si déjà abonné
         reg.pushManager.getSubscription().then(sub => {
             if (!sub) {
-                // Proposer l'abonnement après 3 secondes
                 setTimeout(() => askPushPermission(reg), 3000);
             }
         });
@@ -360,14 +333,11 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 }
 
 async function askPushPermission(reg) {
-    // Ne pas demander si déjà refusé
     if (Notification.permission === 'denied') return;
     if (Notification.permission === 'granted') {
         await subscribePush(reg);
         return;
     }
-
-    // Afficher une bannière douce avant le prompt natif
     const banner = document.getElementById('push-banner');
     if (banner) banner.style.display = 'flex';
 }
@@ -375,10 +345,8 @@ async function askPushPermission(reg) {
 async function enablePush() {
     const banner = document.getElementById('push-banner');
     if (banner) banner.style.display = 'none';
-
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') return;
-
     const reg = await navigator.serviceWorker.ready;
     await subscribePush(reg);
 }
@@ -386,32 +354,24 @@ async function enablePush() {
 function dismissPush() {
     const banner = document.getElementById('push-banner');
     if (banner) banner.style.display = 'none';
-    // Ne plus demander pendant 7 jours
     localStorage.setItem('push_dismissed', Date.now() + 7 * 86400000);
 }
 
 async function subscribePush(reg) {
-    // Vérifier si on a récemment refusé la bannière
     const dismissed = localStorage.getItem('push_dismissed');
     if (dismissed && Date.now() < parseInt(dismissed)) return;
-
     try {
-        // Récupérer la clé publique VAPID
         const res    = await fetch('/push/vapid-public-key');
         const { key } = await res.json();
-
         const sub = await reg.pushManager.subscribe({
             userVisibleOnly:      true,
             applicationServerKey: urlBase64ToUint8Array(key),
         });
-
-        // Envoyer au serveur
         await fetch('/push/subscribe', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(sub),
         });
-
     } catch (e) {
         console.log('Push subscribe error:', e);
     }
@@ -429,7 +389,7 @@ function urlBase64ToUint8Array(base64String) {
 {# Bannière douce d'invitation aux notifications #}
 {% if app.user %}
 <div id="push-banner"
-     style="display:none;position:fixed;bottom:calc(var(--bottom-h,0px) + env(safe-area-inset-bottom) + 12px);
+     style="display:none;position:fixed;bottom:12px;
             left:12px;right:12px;z-index:150;
             background:var(--forest);color:white;
             border-radius:16px;padding:1rem 1.2rem;
@@ -454,5 +414,27 @@ function urlBase64ToUint8Array(base64String) {
     </div>
 </div>
 {% endif %}
+
+{# Burger menu JS #}
+<script>
+(function () {
+    const burger = document.getElementById('mobile-burger');
+    const menu   = document.getElementById('mobile-menu');
+    if (!burger || !menu) return;
+
+    burger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const isOpen = menu.style.display === 'block';
+        menu.style.display = isOpen ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!menu.contains(e.target) && e.target !== burger) {
+            menu.style.display = 'none';
+        }
+    });
+})();
+</script>
+
 </body>
 </html>
