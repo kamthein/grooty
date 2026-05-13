@@ -36,7 +36,7 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/register', name: 'app_register')]
-    public function register(Request $request, UserPasswordHasherInterface $hasher, EntityManagerInterface $em, Security $security): Response
+    public function register(Request $request, UserPasswordHasherInterface $hasher, EntityManagerInterface $em, Security $security, \App\Service\NotificationService $notifier): Response
     {
         if ($this->getUser()) return $this->redirectToRoute('app_dashboard');
         $guardian = new Guardian();
