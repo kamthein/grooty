@@ -55,6 +55,9 @@ class SecurityController extends AbstractController
             }
 
             $em->flush();
+
+            $notifier->sendWelcome($guardian);
+
             $security->login($guardian, 'form_login', 'main');
             $this->addFlash('success', 'Bienvenue sur Grooty !');
 

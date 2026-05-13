@@ -209,6 +209,38 @@ public function sendJoinRequestRefused(\App\Entity\JoinRequest $req): void
     $this->send($req->getRequester(), "Demande d'accès à Grooty", $html);
 }
 
+/** Email de bienvenue à l'inscription */
+public function sendWelcome(Guardian $guardian): void
+{
+    $link = $this->appBaseUrl . '/children/new';
+
+    $html = $this->layout(
+        'Bienvenue sur Grooty 🌿',
+        "
+        <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .8rem;'>
+            Bonjour {$guardian->getFirstName()} ! 👋
+        </h2>
+        <p style='color:#3D3D38;line-height:1.6;margin-bottom:1rem;'>
+            Bienvenue sur <strong>Grooty</strong>, l'agenda familial partagé.
+            Votre compte est créé et prêt à l'emploi.
+        </p>
+        <p style='color:#3D3D38;line-height:1.6;margin-bottom:1.5rem;'>
+            Commencez par créer le profil de votre enfant pour organiser
+            et partager son calendrier avec vos proches.
+        </p>
+        <div style='text-align:center;'>
+            <a href='{$link}'
+               style='background:#3D5A47;color:white;padding:.8rem 2rem;border-radius:100px;
+                      text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;'>
+                👶 Créer mon premier enfant
+            </a>
+        </div>
+        "
+    );
+
+    $this->send($guardian, 'Bienvenue sur Grooty 🌿', $html);
+}
+
 
     private function send(Guardian $recipient, string $subject, string $html): void
     {
