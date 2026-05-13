@@ -7,7 +7,10 @@
     display: flex; align-items: center; gap: 1rem;
     padding: .8rem 0; border-bottom: 1px solid var(--warm);
 }
-.guardian-badges { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-left: auto; }
+.guardian-badges {
+    display: flex; align-items: center; gap: .5rem;
+    flex-wrap: wrap; margin-left: auto;
+}
 @media (max-width: 480px) {
     .guardian-row { flex-wrap: wrap; gap: .5rem; }
     .guardian-badges { margin-left: 0; width: 100%; padding-left: 52px; }
@@ -98,6 +101,8 @@
         </form>
         {% endif %}
     </div>
+
+    {# GARDIENS #}
     <div class="card" style="margin-bottom:1.2rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;">
             <h2 class="card-title" style="margin:0;">👥 Gardiens ({{ guardians|length }})</h2>
@@ -107,44 +112,55 @@
         </div>
 
         {% for cg in guardians %}
-        <div style="display:flex;align-items:center;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--warm);">
+        <div class="guardian-row">
+
+            {# Avatar initiales #}
             <div style="width:40px;height:40px;border-radius:50%;
                         background:{% if loop.first %}var(--terracotta){% else %}var(--forest){% endif %};
                         display:flex;align-items:center;justify-content:center;
                         color:white;font-size:.8rem;font-weight:700;flex-shrink:0;">
                 {% if cg.guardian %}{{ cg.guardian.firstName|first|upper }}{{ cg.guardian.lastName|first|upper }}{% else %}?{% endif %}
             </div>
-            <div style="flex:1;">
-                <div style="font-weight:500;font-size:.9rem;">
+
+            {# Nom + email #}
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                     {% if cg.guardian %}{{ cg.guardian.fullName }}{% else %}{{ cg.inviteEmail }}{% endif %}
                 </div>
-                <div style="font-size:.75rem;color:var(--muted);">
+                <div style="font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                     {% if cg.guardian %}{{ cg.guardian.email }}{% else %}Compte non créé{% endif %}
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:.5rem;">
-                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;background:var(--warm);color:var(--muted);">
+
+            {# Badges #}
+            <div class="guardian-badges">
+                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;background:var(--warm);color:var(--muted);white-space:nowrap;">
                     {% if cg.role == 'parent' %}👨‍👩‍👧 Parent
                     {% elseif cg.role == 'nounou' %}🧸 Nounou
                     {% elseif cg.role == 'grandparent' %}👴 Grand-parent
                     {% else %}👤 Autre{% endif %}
                 </span>
-                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;
+                <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:100px;white-space:nowrap;
                              {% if cg.isAdmin() %}background:rgba(61,90,71,.12);color:var(--forest);
                              {% elseif cg.canEdit() %}background:rgba(196,113,74,.1);color:var(--terracotta);
                              {% else %}background:var(--sand);color:var(--muted);{% endif %}">
                     {% if cg.isAdmin() %}👑 Admin{% elseif cg.canEdit() %}✏️ Éditeur{% else %}👁️ Lecteur{% endif %}
                 </span>
                 {% if not cg.inviteAccepted %}
-                <span style="font-size:.7rem;background:var(--sand);color:var(--muted);padding:.15rem .5rem;border-radius:100px;">⏳ En attente</span>
+                <span style="font-size:.7rem;background:var(--sand);color:var(--muted);padding:.15rem .5rem;border-radius:100px;white-space:nowrap;">
+                    ⏳ En attente
+                </span>
                 {% endif %}
             </div>
+
+            {# Bouton retrait #}
             {% if is_granted('CHILD_ADMIN', child) and not cg.isAdmin() %}
             <form method="post" action="{{ path('app_guardian_remove', {'id': child.id, 'cgId': cg.id}) }}"
-                  onsubmit="return confirm('Retirer ce gardien ?')">
+                  onsubmit="return confirm('Retirer ce gardien ?')" style="flex-shrink:0;">
                 <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--terracotta);">✕</button>
             </form>
             {% endif %}
+
         </div>
         {% endfor %}
     </div>
@@ -189,7 +205,6 @@
     </div>
 </div>
 {% endblock %}
-
 
 {% block javascripts %}
 <script>
