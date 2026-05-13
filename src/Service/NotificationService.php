@@ -120,6 +120,96 @@ class NotificationService
         }
     }
 
+
+/** Notifie l'admin qu'un utilisateur veut rejoindre le calendrier */
+public function sendJoinRequestToAdmin(Guardian $admin, \App\Entity\JoinRequest $req): void
+{
+    $child     = $req->getChild();
+    $requester = $req->getRequester();
+    $acceptUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/accept?token=' . $req->getToken();
+    $refuseUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/refuse?token=' . $req->getToken();
+
+    $html = $this->layout(
+        "Demande d'accès — {$child->getFirstName()}",
+        "
+        <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
+            Nouvelle demande d'accès 🔔
+        </h2>
+        <p style='color:#3D3D38;line-height:1.6;margin-bottom:1.5rem;'>
+            <strong>{$requester->getFullName()}</strong> ({$requester->getEmail()})
+            souhaite rejoindre le calendrier de <strong>{$child->getFirstName()}</strong>.
+        </p>
+        <div style='display:flex;gap:1rem;text-align:center;margin-bottom:1.5rem;'>
+            <a href='{$acceptUrl}'
+               style='background:#3D5A47;color:white;padding:.8rem 2rem;border-radius:100px;
+                      text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;margin-right:1rem;'>
+                ✅ Accepter
+            </a>
+            <a href='{$refuseUrl}'
+               style='background:#c0392b;color:white;padding:.8rem 2rem;border-radius:100px;
+                      text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;'>
+                ❌ Refuser
+            </a>
+        </div>
+        <p style='color:#8A8578;font-size:.82rem;'>
+            Ces liens sont valables 7 jours. Vous pouvez aussi gérer les accès depuis l'application.
+        </p>
+        "
+    );
+
+    $this->send($admin, "Demande d'accès au calendrier de {$child->getFirstName()}", $html);
+}
+
+/** Notifie le demandeur que sa demande a été acceptée */
+public function sendJoinRequestAccepted(\App\Entity\JoinRequest $req): void
+{
+    $child = $req->getChild();
+    $link  = $this->appBaseUrl . '/train/' . $child->getId();
+
+    $html = $this->layout(
+        "Accès accordé — {$child->getFirstName()}",
+        "
+        <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
+            Votre demande a été acceptée ✅
+        </h2>
+        <p style='color:#3D3D38;line-height:1.6;margin-bottom:1.5rem;'>
+            Vous avez maintenant accès au calendrier de <strong>{$child->getFirstName()}</strong>.
+        </p>
+        <div style='text-align:center;'>
+            <a href='{$link}'
+               style='background:#3D5A47;color:white;padding:.8rem 2rem;border-radius:100px;
+                      text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;'>
+                Voir le calendrier 🚂
+            </a>
+        </div>
+        "
+    );
+
+    $this->send($req->getRequester(), "Accès accordé — calendrier de {$child->getFirstName()}", $html);
+}
+
+/** Notifie le demandeur que sa demande a été refusée */
+public function sendJoinRequestRefused(\App\Entity\JoinRequest $req): void
+{
+    $child = $req->getChild();
+
+    $html = $this->layout(
+        "Demande non acceptée — {$child->getFirstName()}",
+        "
+        <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
+            Demande non acceptée
+        </h2>
+        <p style='color:#3D3D38;line-height:1.6;'>
+            L'administrateur du calendrier de <strong>{$child->getFirstName()}</strong>
+            n'a pas donné suite à votre demande d'accès.
+        </p>
+        "
+    );
+
+    $this->send($req->getRequester(), "Demande d'accès à Grooty", $html);
+}
+
+
     private function send(Guardian $recipient, string $subject, string $html): void
     {
         if (!$recipient->getEmail()) return;

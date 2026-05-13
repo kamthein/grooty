@@ -143,7 +143,14 @@
         <div class="share-header-sub">Calendrier partagé · lecture seule</div>
     </div>
     <div class="share-header-brand">Grooty</div>
-    <a href="/register" class="share-cta-btn">Rejoindre</a>
+        {% if app.user %}
+            <form method="post" action="{{ path('app_share_join', {token: token}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('join_' ~ token) }}">
+                <button type="submit" class="share-cta-btn">Rejoindre</button>
+            </form>
+        {% else %}
+            <a href="{{ path('app_register', {share: token}) }}" class="share-cta-btn">Rejoindre</a>
+        {% endif %}
 </div>
 
 <div class="main">
@@ -226,10 +233,17 @@
     <div class="share-cta">
         <h2>Vous faites partie de la famille de <em style="font-style:italic;color:var(--hk-pink)">{{ child.firstName }}</em> ? 🎀</h2>
         <p>Créez un compte gratuit pour ajouter des événements, écrire des notes<br>et recevoir les mises à jour en temps réel.</p>
-        <div style="display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;">
-            <a href="/register" class="btn btn-primary">🌿 Créer mon compte</a>
-            <a href="/login"    class="btn btn-ghost">Se connecter</a>
-        </div>
+            <div style="display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;">
+                {% if app.user %}
+                    <form method="post" action="{{ path('app_share_join', {token: token}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('join_' ~ token) }}">
+                        <button type="submit" class="btn btn-primary">🌿 Demander à rejoindre</button>
+                    </form>
+                {% else %}
+                    <a href="{{ path('app_register', {share: token}) }}" class="btn btn-primary">🌿 Créer mon compte</a>
+                    <a href="{{ path('app_login') }}" class="btn btn-ghost">Se connecter</a>
+                {% endif %}
+            </div>
     </div>
 
     <div style="text-align:center;padding:1.5rem;font-size:.75rem;color:rgba(0,0,0,.3);">
