@@ -336,11 +336,13 @@ body { background: repeating-linear-gradient(135deg, #FFF0F5 0px, #FFF0F5 20px, 
             </a>
             {% endfor %}
             <a href="{{ path('app_note_index', {'childId': child.id}) }}" class="btn btn-ghost btn-sm">💌 Notes</a>
+            {% if canEditMap[child.id] is defined and canEditMap[child.id] %}
             <a href="{{ path('app_event_new', {'childId': child.id}) }}"
                style="padding:.4rem 1rem;border-radius:100px;background:#FF85A1;color:white;
                       text-decoration:none;font-size:.82rem;font-weight:600;border:none;">
                 ＋ Événement
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -478,6 +480,7 @@ body { background: repeating-linear-gradient(135deg, #FFF0F5 0px, #FFF0F5 20px, 
         </div>
         <div id="modal-content" style="padding:1.2rem 1.5rem .5rem;"></div>
         <div style="padding:.5rem 1.5rem 1.2rem;display:flex;gap:.5rem;justify-content:flex-end;">
+            {% if canEditMap[child.id] is defined and canEditMap[child.id] %}
             <button onclick="deleteEvent()"
                     style="padding:.4rem .9rem;border-radius:100px;border:2px solid #FFD6E0;
                            background:white;color:#E8355A;cursor:pointer;font-size:.8rem;font-weight:500;">
@@ -488,6 +491,7 @@ body { background: repeating-linear-gradient(135deg, #FFF0F5 0px, #FFF0F5 20px, 
                       text-decoration:none;font-size:.8rem;font-weight:600;">
                 ✏️ Modifier
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -603,3 +607,4 @@ function downloadIcal() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 </script>
 {% endblock %}
+

@@ -111,7 +111,7 @@
         <h1 style="font-family:'Fraunces',serif;font-size:1.8rem;font-weight:300;">
             Bonjour <em style="font-style:italic;color:var(--terracotta)">{{ app.user.firstName }}</em> 👋
         </h1>
-        {% if children is not empty %}
+        {% if children is not empty and (canEditMap[children|first.id] is defined and canEditMap[children|first.id]) %}
         <div style="display:flex;gap:.5rem;">
             <a href="{{ path('app_event_new', {'childId': children|first.id}) }}" class="btn btn-secondary">＋ Événement</a>
         </div>
@@ -293,8 +293,7 @@
         <div id="ev-modal-content" style="padding:1.5rem 1.5rem 1rem;"></div>
         <div style="padding:.5rem 1.5rem 1.5rem;display:flex;gap:.5rem;justify-content:flex-end;">
             <button onclick="closeEventModal()" class="btn btn-ghost btn-sm">Fermer</button>
-            <button onclick="deleteCurrentEvent()" class="btn btn-ghost btn-sm" style="color:var(--terracotta);border-color:var(--terracotta);">🗑️ Supprimer</button>
-            <a id="modal-edit-btn" href="#" class="btn btn-primary btn-sm">✏️ Modifier</a>
+            <span id="modal-action-btns"></span>
         </div>
     </div>
 </div>
@@ -303,6 +302,7 @@
 {% block javascripts %}
 <script>
 const myId = {{ app.user.id }};
+const canEditMap = {{ canEditMap|json_encode|raw }};
 let currentChildId = {{ children is not empty ? children|first.id : 0 }};
 
 // Charger les notes au démarrage
@@ -448,7 +448,14 @@ function openEventModal(id, title, type, start, end, childId, description, image
         ${description ? `<p style="font-size:.88rem;color:var(--ink-soft);line-height:1.5;margin-bottom:${imageUrl?'.8rem':'0'};">${description}</p>` : ''}
         ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:200px;object-fit:contain;background:var(--warm);border-radius:12px;"></div>` : ''}
     `;
-    document.getElementById('modal-edit-btn').href = `/children/${childId}/events/${id}/edit`;
+    const canEdit = (typeof canEditMap !== 'undefined') && canEditMap[childId];
+    const actionBtns = document.getElementById('modal-action-btns');
+    if (actionBtns) {
+        actionBtns.innerHTML = canEdit
+            ? `<button onclick="deleteCurrentEvent()" class="btn btn-ghost btn-sm" style="color:var(--terracotta);border-color:var(--terracotta);">🗑️ Supprimer</button>
+               <a href="/children/${childId}/events/${id}/edit" class="btn btn-primary btn-sm">✏️ Modifier</a>`
+            : '';
+    }
     document.getElementById('ev-modal').style.display = 'flex';
 }
 

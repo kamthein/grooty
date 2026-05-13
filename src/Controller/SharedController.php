@@ -38,9 +38,14 @@ class SharedController extends AbstractController
             $weekByDay[$w] = $this->groupByDay($events);
         }
 
+        $canEditMap = [];
+        foreach ($childGuardians as $cg) {
+            $canEditMap[$cg->getChild()->getId()] = $cg->getPermission() === 'admin';
+        }
+
         return $this->render(
             $child->getTheme() === 'kitty' ? 'shared/kitty.html.twig' : 'shared/train.html.twig',
-            ['child' => $child, 'children' => $children, 'weekByDay' => $weekByDay]
+            ['child' => $child, 'children' => $children, 'weekByDay' => $weekByDay, 'canEditMap' => $canEditMap]
         );
     }
 

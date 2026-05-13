@@ -66,12 +66,18 @@ class DashboardController extends AbstractController
             $em->flush();
         }
 
+        $canEditMap = [];
+        foreach ($childGuardians as $cg) {
+        $canEditMap[$cg->getChild()->getId()] = $cg->getPermission() === 'admin';
+            }
+
         return $this->render('base/dashboard.html.twig', [
             'childGuardians' => $childGuardians,
             'children'       => $children,
             'upcomingEvents' => $upcomingEvents,
             'todayGuardians' => $todayEvents,
             'onboardingStep' => $onboardingStep,
+            'canEditMap'     => $canEditMap,
         ]);
     }
 }
