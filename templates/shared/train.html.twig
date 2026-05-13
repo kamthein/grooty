@@ -551,7 +551,8 @@ function openModal(id, title, type, start, end, childId, description, imageUrl) 
         ${description ? `<p style="font-size:.85rem;line-height:1.5;color:#3D3D38;margin-bottom:${imageUrl?'.7rem':'0'};">${description}</p>` : ''}
         ${imageUrl ? `<div style="border-radius:10px;overflow:hidden;cursor:zoom-in;" onclick="openLightbox('${imageUrl}')"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;background:#f5f5f5;"></div>` : ''}
     `;
-    document.getElementById('modal-edit').href = `/children/${childId}/events/${id}/edit`;
+    const editBtn = document.getElementById('modal-edit');
+    if (editBtn) editBtn.href = `/children/${childId}/events/${id}/edit`;
     document.getElementById('ev-modal').style.display = 'flex';
 }
 

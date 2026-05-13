@@ -524,7 +524,8 @@ function openModal(id, title, type, start, end, childId, description, imageUrl) 
         ${description ? `<p style="font-size:.87rem;color:#3D2B3D;line-height:1.5;margin-bottom:${imageUrl?'.7rem':'0'};">${description}</p>` : ''}
         ${imageUrl ? `<div style="border-radius:12px;overflow:hidden;border:2px solid #FFD6E0;cursor:zoom-in;" onclick="openLightbox('${imageUrl}')"><img src="${imageUrl}" style="width:100%;height:auto;display:block;max-height:180px;object-fit:contain;"></div>` : ''}
     `;
-    document.getElementById('modal-edit').href = `/children/${childId}/events/${id}/edit`;
+    const editBtn = document.getElementById('modal-edit');
+    if (editBtn) editBtn.href = `/children/${childId}/events/${id}/edit`;
     document.getElementById('ev-modal').style.display = 'flex';
 }
 
@@ -607,4 +608,3 @@ function downloadIcal() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 </script>
 {% endblock %}
-
