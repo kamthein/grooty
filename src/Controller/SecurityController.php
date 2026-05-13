@@ -54,21 +54,25 @@ class SecurityController extends AbstractController
                 // Ne pas accepter automatiquement — la personne doit cliquer le lien
             }
 
-            $em->flush();
+$em->flush();
+$notifier->sendWelcome($guardian);
 
-            $notifier->sendWelcome($guardian);
+// Lire les tokens en session AVANT le login (qui peut reset la session)
+$pendingInviteToken = $request->getSession()->get('pending_invite_token');
+$pendingShareToken  = $request->getSession()->get('pending_share_token');
 
-            $security->login($guardian, 'form_login', 'main');
-            $this->addFlash('success', 'Bienvenue sur Grooty !');
+$security->login($guardian, 'form_login', 'main');
+$this->addFlash('success', 'Bienvenue sur Grooty !');
 
-            // Si invitation en attente en session
-            $pendingToken = $request->getSession()->get('pending_invite_token');
-            if ($pendingToken) {
-                $request->getSession()->remove('pending_invite_token');
-                return $this->redirectToRoute('app_invite_accept', ['token' => $pendingToken]);
-            }
+if ($pendingInviteToken) {
+    return $this->redirectToRoute('app_invite_accept', ['token' => $pendingInviteToken]);
+}
 
-            return $this->redirectToRoute('app_child_new');
+if ($pendingShareToken) {
+    return $this->redirectToRoute('app_share_join', ['token' => $pendingShareToken]);
+}
+
+return $this->redirectToRoute('app_child_new');
         }
         return $this->render('security/register.html.twig', ['form' => $form]);
     }
