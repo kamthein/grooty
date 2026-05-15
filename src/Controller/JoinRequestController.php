@@ -7,23 +7,22 @@ use App\Repository\JoinRequestRepository;
 use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class JoinRequestController extends AbstractController
 {
-    #[Route('/join-request/{id}/accept', name: 'app_join_request_accept')]
+    #[Route('/join-request/{id}/accept/{token}', name: 'app_join_request_accept')]
     public function accept(
         int $id,
-        Request $request,
+        string $token,
         JoinRequestRepository $joinReqRepo,
         EntityManagerInterface $em,
         NotificationService $notifier,
     ): Response {
         $req = $joinReqRepo->find($id);
 
-        if (!$req || $req->getStatus() !== 'pending' || $req->getToken() !== $request->query->get('token')) {
+        if (!$req || $req->getStatus() !== 'pending' || $req->getToken() !== $token) {
             $this->addFlash('error', 'Lien invalide ou expiré.');
             return $this->redirectToRoute('app_dashboard');
         }
@@ -47,17 +46,17 @@ class JoinRequestController extends AbstractController
         return $this->redirectToRoute('app_train', ['childId' => $req->getChild()->getId()]);
     }
 
-    #[Route('/join-request/{id}/refuse', name: 'app_join_request_refuse')]
+    #[Route('/join-request/{id}/refuse/{token}', name: 'app_join_request_refuse')]
     public function refuse(
         int $id,
-        Request $request,
+        string $token,
         JoinRequestRepository $joinReqRepo,
         EntityManagerInterface $em,
         NotificationService $notifier,
     ): Response {
         $req = $joinReqRepo->find($id);
 
-        if (!$req || $req->getStatus() !== 'pending' || $req->getToken() !== $request->query->get('token')) {
+        if (!$req || $req->getStatus() !== 'pending' || $req->getToken() !== $token) {
             $this->addFlash('error', 'Lien invalide ou expiré.');
             return $this->redirectToRoute('app_dashboard');
         }
