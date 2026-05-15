@@ -62,12 +62,9 @@ class NotificationService
     /** Envoie le lien d'invitation par email */
     public function sendInvitation(ChildGuardian $cg, Guardian $invitedBy): void
     {
+        $email = $cg->getInviteEmail() ?? $cg->getGuardian()?->getEmail();
+        if (!$email) return;
 
-        // Utiliser l'email du guardian existant si pas d'inviteEmail
-         $email = $cg->getInviteEmail() ?? $cg->getGuardian()?->getEmail();
-        if (!$email) return; // sécurité
-     
-        //$email    = $cg->getInviteEmail();
         $child    = $cg->getChild();
         $token    = $cg->getInviteToken();
         $link     = $this->appBaseUrl . '/invite/accept/' . $token;
@@ -120,18 +117,18 @@ class NotificationService
         }
     }
 
+    /** Notifie l'admin qu'un utilisateur veut rejoindre le calendrier */
+    public function sendJoinRequestToAdmin(Guardian $admin, \App\Entity\JoinRequest $req): void
+    {
+        $child     = $req->getChild();
+        $requester = $req->getRequester();
+        $token     = $req->getToken();
+        $acceptUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/accept/' . $token;
+        $refuseUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/refuse/' . $token;
 
-/** Notifie l'admin qu'un utilisateur veut rejoindre le calendrier */
-public function sendJoinRequestToAdmin(Guardian $admin, \App\Entity\JoinRequest $req): void
-{
-    $child     = $req->getChild();
-    $requester = $req->getRequester();
-    $acceptUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/accept?token=' . $req->getToken();
-    $refuseUrl = $this->appBaseUrl . '/join-request/' . $req->getId() . '/refuse?token=' . $req->getToken();
-
-    $html = $this->layout(
-        "Demande d'accès — {$child->getFirstName()}",
-        "
+        $html = $this->layout(
+            "Demande d'accès — {$child->getFirstName()}",
+            "
         <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
             Nouvelle demande d'accès 🔔
         </h2>
@@ -139,7 +136,7 @@ public function sendJoinRequestToAdmin(Guardian $admin, \App\Entity\JoinRequest 
             <strong>{$requester->getFullName()}</strong> ({$requester->getEmail()})
             souhaite rejoindre le calendrier de <strong>{$child->getFirstName()}</strong>.
         </p>
-        <div style='display:flex;gap:1rem;text-align:center;margin-bottom:1.5rem;'>
+        <div style='text-align:center;margin-bottom:1.5rem;'>
             <a href='{$acceptUrl}'
                style='background:#3D5A47;color:white;padding:.8rem 2rem;border-radius:100px;
                       text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;margin-right:1rem;'>
@@ -155,20 +152,20 @@ public function sendJoinRequestToAdmin(Guardian $admin, \App\Entity\JoinRequest 
             Ces liens sont valables 7 jours. Vous pouvez aussi gérer les accès depuis l'application.
         </p>
         "
-    );
+        );
 
-    $this->send($admin, "Demande d'accès au calendrier de {$child->getFirstName()}", $html);
-}
+        $this->send($admin, "Demande d'accès au calendrier de {$child->getFirstName()}", $html);
+    }
 
-/** Notifie le demandeur que sa demande a été acceptée */
-public function sendJoinRequestAccepted(\App\Entity\JoinRequest $req): void
-{
-    $child = $req->getChild();
-    $link  = $this->appBaseUrl . '/train/' . $child->getId();
+    /** Notifie le demandeur que sa demande a été acceptée */
+    public function sendJoinRequestAccepted(\App\Entity\JoinRequest $req): void
+    {
+        $child = $req->getChild();
+        $link  = $this->appBaseUrl . '/train/' . $child->getId();
 
-    $html = $this->layout(
-        "Accès accordé — {$child->getFirstName()}",
-        "
+        $html = $this->layout(
+            "Accès accordé — {$child->getFirstName()}",
+            "
         <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
             Votre demande a été acceptée ✅
         </h2>
@@ -183,19 +180,19 @@ public function sendJoinRequestAccepted(\App\Entity\JoinRequest $req): void
             </a>
         </div>
         "
-    );
+        );
 
-    $this->send($req->getRequester(), "Accès accordé — calendrier de {$child->getFirstName()}", $html);
-}
+        $this->send($req->getRequester(), "Accès accordé — calendrier de {$child->getFirstName()}", $html);
+    }
 
-/** Notifie le demandeur que sa demande a été refusée */
-public function sendJoinRequestRefused(\App\Entity\JoinRequest $req): void
-{
-    $child = $req->getChild();
+    /** Notifie le demandeur que sa demande a été refusée */
+    public function sendJoinRequestRefused(\App\Entity\JoinRequest $req): void
+    {
+        $child = $req->getChild();
 
-    $html = $this->layout(
-        "Demande non acceptée — {$child->getFirstName()}",
-        "
+        $html = $this->layout(
+            "Demande non acceptée — {$child->getFirstName()}",
+            "
         <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .5rem;'>
             Demande non acceptée
         </h2>
@@ -204,19 +201,19 @@ public function sendJoinRequestRefused(\App\Entity\JoinRequest $req): void
             n'a pas donné suite à votre demande d'accès.
         </p>
         "
-    );
+        );
 
-    $this->send($req->getRequester(), "Demande d'accès à Grooty", $html);
-}
+        $this->send($req->getRequester(), "Demande d'accès à Grooty", $html);
+    }
 
-/** Email de bienvenue à l'inscription */
-public function sendWelcome(Guardian $guardian): void
-{
-    $link = $this->appBaseUrl . '/children/new';
+    /** Email de bienvenue à l'inscription */
+    public function sendWelcome(Guardian $guardian): void
+    {
+        $link = $this->appBaseUrl . '/children/new';
 
-    $html = $this->layout(
-        'Bienvenue sur Grooty 🌿',
-        "
+        $html = $this->layout(
+            'Bienvenue sur Grooty 🌿',
+            "
         <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 .8rem;'>
             Bonjour {$guardian->getFirstName()} ! 👋
         </h2>
@@ -236,11 +233,10 @@ public function sendWelcome(Guardian $guardian): void
             </a>
         </div>
         "
-    );
+        );
 
-    $this->send($guardian, 'Bienvenue sur Grooty 🌿', $html);
-}
-
+        $this->send($guardian, 'Bienvenue sur Grooty 🌿', $html);
+    }
 
     private function send(Guardian $recipient, string $subject, string $html): void
     {
