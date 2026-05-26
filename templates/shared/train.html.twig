@@ -379,6 +379,7 @@ body {
     </div>
 
     {% set joursFR = {'Mon':'Lun','Tue':'Mar','Wed':'Mer','Thu':'Jeu','Fri':'Ven','Sat':'Sam','Sun':'Dim'} %}
+    {% set moisFR  = {'1':'janvier','2':'février','3':'mars','4':'avril','5':'mai','6':'juin','7':'juillet','8':'août','9':'septembre','10':'octobre','11':'novembre','12':'décembre'} %}
     {% set today   = 'now'|date('Y-m-d') %}
 
     {% for weekOffset in 0..11 %}
@@ -390,7 +391,7 @@ body {
 
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;" class="no-print">
                 <div style="font-family:'Fraunces',serif;font-size:.9rem;color:var(--tr-muted,#6B7280);">
-                    Semaine {{ wStart|date('W') }} · du {{ wStart|date('d') }} au {{ wEnd|date('d F Y') }}
+                    Semaine {{ wStart|date('W') }} · du {{ wStart|date('d') }} au {{ wEnd|date('d') }} {{ moisFR[wEnd|date('n')] }} {{ wEnd|date('Y') }}
                 </div>
                 <button onclick="printWeek({{ weekOffset }})"
                         style="padding:.3rem .85rem;border-radius:100px;font-size:.72rem;
