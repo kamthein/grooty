@@ -135,8 +135,13 @@ class ChildController extends AbstractController
     }
 
     #[Route('/{id}/invite', name: 'app_child_invite', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function invite(Child $child, Request $request, EntityManagerInterface $em, \App\Repository\GuardianRepository $guardianRepo, \App\Service\NotificationService $notificationService): Response
-    {
+    public function invite(
+        Child $child,
+        Request $request,
+        EntityManagerInterface $em,
+        \App\Repository\GuardianRepository $guardianRepo,
+        \App\Service\NotificationService $notificationService
+    ): Response {
         $this->denyAccessUnlessGranted('CHILD_ADMIN', $child);
         $form = $this->createForm(InviteGuardianType::class);
         $form->handleRequest($request);
@@ -153,11 +158,12 @@ class ChildController extends AbstractController
             $cg->setPermission($data['permission'] ?? ChildGuardian::PERM_VIEW);
             $cg->setInviteToken(bin2hex(random_bytes(16)));
 
-
             if ($existingGuardian) {
+                // Guardian existant → lié immédiatement, pas besoin d'approbation
                 $cg->setGuardian($existingGuardian);
-                $cg->setInviteAccepted(false);
+                $cg->setInviteAccepted(true);
             } else {
+                // Pas de compte → en attente d'inscription
                 $cg->setGuardian(null);
                 $cg->setInviteEmail($email);
                 $cg->setInviteAccepted(false);
@@ -166,13 +172,18 @@ class ChildController extends AbstractController
             $em->persist($cg);
             $em->flush();
 
-            // Envoyer l'email d'invitation
+            // Envoyer l'email
             try {
-                $notificationService->sendInvitation($cg, $this->getUser());
+                if ($existingGuardian) {
+                    // Notification simple — accès immédiat
+                    $notificationService->sendGuardianAdded($cg, $this->getUser());
+                } else {
+                    // Lien d'invitation — accès après inscription
+                    $notificationService->sendInvitation($cg, $this->getUser());
+                }
                 $this->addFlash('success', "Invitation envoyée à {$email} par email !");
             } catch (\Exception $e) {
-                $link = $this->generateUrl('app_invite_accept', ['token' => $cg->getInviteToken()], \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
-                $this->addFlash('success', "Invitation créée. Envoyez ce lien à {$email} : {$link}");
+                $this->addFlash('success', "Gardien ajouté avec succès !");
             }
 
             return $this->redirectToRoute('app_child_show', ['id' => $child->getId()]);

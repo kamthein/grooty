@@ -28,8 +28,8 @@ class InviteController extends AbstractController
         }
 
         if ($cg->isInviteAccepted()) {
-            $this->addFlash('info', "Vous avez déjà accepté cette invitation.");
-            return $this->redirectToRoute('app_dashboard');
+            $this->addFlash('info', "Vous avez déjà accès à ce calendrier.");
+            return $this->redirectToRoute('app_train', ['childId' => $cg->getChild()->getId()]);
         }
 
         if ($cg->getInviteEmail() && $cg->getInviteEmail() !== $user->getEmail()) {
@@ -44,6 +44,7 @@ class InviteController extends AbstractController
         $cg->setInviteAccepted(true);
         $cg->setInviteToken(null);
         $cg->setInviteEmail(null);
+        $cg->setJoinedAt(new \DateTimeImmutable());
         $em->flush();
 
         $this->addFlash('success', "Vous avez rejoint le calendrier de {$cg->getChild()->getFirstName()} ! 🎉");

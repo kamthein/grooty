@@ -238,6 +238,49 @@ class NotificationService
         $this->send($guardian, 'Bienvenue sur Grooty 🌿', $html);
     }
 
+    /** Notifie un gardien existant qu'il a été ajouté directement à un calendrier */
+    public function sendGuardianAdded(\App\Entity\ChildGuardian $cg, Guardian $invitedBy): void
+    {
+        $recipient = $cg->getGuardian();
+        if (!$recipient) return;
+
+        $child = $cg->getChild();
+        $link  = $this->appBaseUrl . '/train/' . $child->getId();
+
+        $roleLabels = [
+            'parent'      => 'parent',
+            'nounou'      => 'nounou',
+            'grandparent' => 'grand-parent',
+            'other'       => 'gardien',
+        ];
+        $roleLabel = $roleLabels[$cg->getRole()] ?? 'gardien';
+
+        $html = $this->layout(
+            "Accès au calendrier de {$child->getFirstName()}",
+            "
+        <h2 style='font-family:Georgia,serif;font-size:1.4rem;font-weight:400;color:#1C1C1A;margin:0 0 1rem;'>
+            {$invitedBy->getFirstName()} vous a ajouté sur Grooty 🌿
+        </h2>
+        <p style='color:#3D3D38;line-height:1.6;'>
+            <strong>{$invitedBy->getFullName()}</strong> vous a ajouté en tant que <strong>{$roleLabel}</strong>
+            pour <strong>{$child->getFirstName()}</strong> sur Grooty, l'agenda familial partagé.
+        </p>
+        <p style='color:#3D3D38;line-height:1.6;margin-top:1rem;'>
+            Vous avez maintenant accès au calendrier. Cliquez ci-dessous pour le consulter.
+        </p>
+        <div style='text-align:center;margin:2rem 0;'>
+            <a href='{$link}'
+               style='background:#3D5A47;color:white;padding:.8rem 2rem;border-radius:100px;
+                      text-decoration:none;font-weight:600;font-size:1rem;display:inline-block;'>
+                Voir le calendrier de {$child->getFirstName()}
+            </a>
+        </div>
+        "
+        );
+
+        $this->send($recipient, "Vous avez accès au calendrier de {$child->getFirstName()}", $html);
+    }
+
     private function send(Guardian $recipient, string $subject, string $html): void
     {
         if (!$recipient->getEmail()) return;

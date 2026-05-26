@@ -24,9 +24,12 @@ class SecurityController extends AbstractController
             foreach ($pending as $cg) {
                 if (!$cg->getGuardian()) {
                     $cg->setGuardian($this->getUser());
-                    $em->flush();
+                    $cg->setInviteAccepted(true);
+                    $cg->setInviteToken(null);
+                    $cg->setInviteEmail(null);
                 }
             }
+            $em->flush();
             return $this->redirectToRoute('app_dashboard');
         }
         return $this->render('security/login.html.twig', [
@@ -36,44 +39,54 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/register', name: 'app_register')]
-    public function register(Request $request, UserPasswordHasherInterface $hasher, EntityManagerInterface $em, Security $security, \App\Service\NotificationService $notifier): Response
-    {
+    public function register(
+        Request $request,
+        UserPasswordHasherInterface $hasher,
+        EntityManagerInterface $em,
+        Security $security,
+        \App\Service\NotificationService $notifier,
+    ): Response {
         if ($this->getUser()) return $this->redirectToRoute('app_dashboard');
+
         $guardian = new Guardian();
         $form = $this->createForm(RegisterType::class, $guardian);
         $form->handleRequest($request);
+
         if ($form->isSubmitted() && $form->isValid()) {
             $guardian->setPassword($hasher->hashPassword($guardian, $form->get('plainPassword')->getData()));
             $em->persist($guardian);
 
-            // Lier automatiquement les invitations en attente pour cet email
+            // Lier automatiquement les invitations en attente → accès immédiat
             $pendingInvites = $em->getRepository(\App\Entity\ChildGuardian::class)
                 ->findBy(['inviteEmail' => $guardian->getEmail(), 'inviteAccepted' => false]);
             foreach ($pendingInvites as $cg) {
                 $cg->setGuardian($guardian);
-                // Ne pas accepter automatiquement — la personne doit cliquer le lien
+                $cg->setInviteAccepted(true);
+                $cg->setInviteToken(null);
+                $cg->setInviteEmail(null);
             }
 
-$em->flush();
-$notifier->sendWelcome($guardian);
+            $em->flush();
+            $notifier->sendWelcome($guardian);
 
-// Lire les tokens en session AVANT le login (qui peut reset la session)
-$pendingInviteToken = $request->getSession()->get('pending_invite_token');
-$pendingShareToken  = $request->getSession()->get('pending_share_token');
+            // Lire les tokens en session AVANT le login (qui peut reset la session)
+            $pendingInviteToken = $request->getSession()->get('pending_invite_token');
+            $pendingShareToken  = $request->getSession()->get('pending_share_token');
 
-$security->login($guardian, 'form_login', 'main');
-$this->addFlash('success', 'Bienvenue sur Grooty !');
+            $security->login($guardian, 'form_login', 'main');
+            $this->addFlash('success', 'Bienvenue sur Grooty !');
 
-if ($pendingInviteToken) {
-    return $this->redirectToRoute('app_invite_accept', ['token' => $pendingInviteToken]);
-}
+            if ($pendingInviteToken) {
+                return $this->redirectToRoute('app_invite_accept', ['token' => $pendingInviteToken]);
+            }
 
-if ($pendingShareToken) {
-    return $this->redirectToRoute('app_share_join', ['token' => $pendingShareToken]);
-}
+            if ($pendingShareToken) {
+                return $this->redirectToRoute('app_share_join', ['token' => $pendingShareToken]);
+            }
 
-return $this->redirectToRoute('app_child_new');
+            return $this->redirectToRoute('app_child_new');
         }
+
         return $this->render('security/register.html.twig', ['form' => $form]);
     }
 
