@@ -4,9 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Child;
 use App\Entity\Event;
+use App\Entity\EventImage;
 use App\Form\EventType;
 use App\Repository\ChildGuardianRepository;
+use App\Repository\EventImageRepository;
 use App\Repository\EventRepository;
+use App\Service\LocalUploadService;
+use App\Service\RecurrenceService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -78,9 +82,7 @@ class EventController extends AbstractController
     #[Route('', name: 'app_event_index')]
     public function index(int $childId): Response
     {
-        $child = $this->getChildAndCheckAccess($childId);
-        $cg    = $this->cgRepo->findOneByChildAndGuardian($child, $this->getUser());
-
+        $this->getChildAndCheckAccess($childId);
         return $this->redirectToRoute('app_train', ['childId' => $childId]);
     }
 
@@ -88,9 +90,9 @@ class EventController extends AbstractController
     public function new(
         int $childId,
         Request $request,
-        \App\Repository\EventImageRepository $imageRepo,
-        \App\Service\LocalUploadService $uploadService,
-        \App\Service\RecurrenceService $recurrenceService
+        EventImageRepository $imageRepo,
+        LocalUploadService $uploadService,
+        RecurrenceService $recurrenceService
     ): Response {
         $child = $this->getChildAndCheckAccess($childId);
         $this->denyAccessUnlessGranted('CHILD_EDIT', $child);
@@ -137,7 +139,7 @@ class EventController extends AbstractController
             $uploadedFile = $request->files->get('event_image_file');
             if ($uploadedFile) {
                 $paths = $uploadService->uploadEventImage($uploadedFile);
-                $img = new \App\Entity\EventImage();
+                $img = new EventImage();
                 $img->setChild($child);
                 $img->setUploadedBy($this->getUser());
                 $img->setFilePath($paths['filePath']);
@@ -189,9 +191,9 @@ class EventController extends AbstractController
         int $childId,
         Event $event,
         Request $request,
-        \App\Repository\EventImageRepository $imageRepo,
-        \App\Service\LocalUploadService $uploadService,
-        \App\Service\RecurrenceService $recurrenceService
+        EventImageRepository $imageRepo,
+        LocalUploadService $uploadService,
+        RecurrenceService $recurrenceService
     ): Response {
         $child = $this->getChildAndCheckAccess($childId);
         $this->denyAccessUnlessGranted('CHILD_EDIT', $child);
@@ -229,7 +231,7 @@ class EventController extends AbstractController
             $uploadedFile = $request->files->get('event_image_file');
             if ($uploadedFile) {
                 $paths = $uploadService->uploadEventImage($uploadedFile);
-                $img = new \App\Entity\EventImage();
+                $img = new EventImage();
                 $img->setChild($child);
                 $img->setUploadedBy($this->getUser());
                 $img->setFilePath($paths['filePath']);
@@ -274,7 +276,6 @@ class EventController extends AbstractController
 
         // Suppression AJAX depuis la modal (sans pop-up validation) → suppression directe
         if ($request->isXmlHttpRequest()) {
-            $snapshot = $event->toSnapshot();
             $this->em->remove($event);
             $this->em->flush();
             return new JsonResponse(['success' => true]);

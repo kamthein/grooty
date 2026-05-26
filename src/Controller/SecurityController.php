@@ -1,8 +1,10 @@
 <?php
 namespace App\Controller;
 
+use App\Entity\ChildGuardian;
 use App\Entity\Guardian;
 use App\Form\RegisterType;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -15,11 +17,11 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $auth, \Doctrine\ORM\EntityManagerInterface $em): Response
+    public function login(AuthenticationUtils $auth, EntityManagerInterface $em): Response
     {
         if ($this->getUser()) {
             // Lier les invitations en attente pour l'utilisateur connecté
-            $pending = $em->getRepository(\App\Entity\ChildGuardian::class)
+            $pending = $em->getRepository(ChildGuardian::class)
                 ->findBy(['inviteEmail' => $this->getUser()->getEmail(), 'inviteAccepted' => false]);
             foreach ($pending as $cg) {
                 if (!$cg->getGuardian()) {
@@ -44,7 +46,7 @@ class SecurityController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em,
         Security $security,
-        \App\Service\NotificationService $notifier,
+        NotificationService $notifier,
     ): Response {
         if ($this->getUser()) return $this->redirectToRoute('app_dashboard');
 
@@ -57,7 +59,7 @@ class SecurityController extends AbstractController
             $em->persist($guardian);
 
             // Lier automatiquement les invitations en attente → accès immédiat
-            $pendingInvites = $em->getRepository(\App\Entity\ChildGuardian::class)
+            $pendingInvites = $em->getRepository(ChildGuardian::class)
                 ->findBy(['inviteEmail' => $guardian->getEmail(), 'inviteAccepted' => false]);
             foreach ($pendingInvites as $cg) {
                 $cg->setGuardian($guardian);

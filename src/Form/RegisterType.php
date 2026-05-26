@@ -1,5 +1,4 @@
 <?php
-// src/Form/RegisterType.php
 namespace App\Form;
 
 use App\Entity\Guardian;

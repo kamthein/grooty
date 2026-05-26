@@ -7,12 +7,15 @@ use App\Entity\ChildGuardian;
 use App\Form\ChildType;
 use App\Form\InviteGuardianType;
 use App\Repository\ChildGuardianRepository;
+use App\Repository\GuardianRepository;
 use App\Service\LocalUploadService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_USER')]
@@ -118,7 +121,7 @@ class ChildController extends AbstractController
         }
 
         $link = $this->generateUrl('app_share', ['token' => $child->getShareToken()],
-            \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
+            UrlGeneratorInterface::ABSOLUTE_URL);
 
         $this->addFlash('success', "Lien de partage : {$link}");
         return $this->redirectToRoute('app_child_show', ['id' => $child->getId()]);
@@ -139,8 +142,8 @@ class ChildController extends AbstractController
         Child $child,
         Request $request,
         EntityManagerInterface $em,
-        \App\Repository\GuardianRepository $guardianRepo,
-        \App\Service\NotificationService $notificationService
+        GuardianRepository $guardianRepo,
+        NotificationService $notificationService
     ): Response {
         $this->denyAccessUnlessGranted('CHILD_ADMIN', $child);
         $form = $this->createForm(InviteGuardianType::class);
